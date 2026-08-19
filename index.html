@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocVault — a simple document manager</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">Doc<span>Vault</span></div>
+  <div class="count" id="count">0 documents</div>
+</header>
+
+<main>
+  <div class="upload-zone" id="dropZone">
+    <p>Add a document to the vault</p>
+    <button class="btn" id="uploadBtn">Upload a document</button>
+  </div>
+
+  <div class="doc-list" id="docList"></div>
+  <div class="empty" id="emptyState" style="display:none;">
+    <span class="paw">🗂️</span>
+    No documents yet — upload one to get started.
+  </div>
+</main>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2 id="modalTitle">Add a document</h2>
+    <label>ID
+      <input type="text" id="fieldId" placeholder="e.g. DOC-001">
+    </label>
+    <label>Name
+      <input type="text" id="fieldName" placeholder="e.g. Q3 Report">
+    </label>
+    <label>Doc URL
+      <input type="text" id="fieldUrl" placeholder="https://...">
+    </label>
+    <label>Description
+      <textarea id="fieldDesc" rows="3" placeholder="What is this document?"></textarea>
+    </label>
+    <div class="modal-error" id="modalError"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="cancelBtn">Cancel</button>
+      <button class="btn" id="saveBtn">Save document</button>
+    </div>
+  </div>
+</div>
+
+<footer>Backed by DynamoDB via API Gateway + Lambda.</footer>
+
+<script src="config.js"></script>
+<script src="api.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
