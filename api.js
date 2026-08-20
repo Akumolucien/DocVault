@@ -41,3 +41,18 @@ async function deleteDocument(id) {
   });
   return unwrap(res);
 }
+
+async function uploadFile(file) {
+  const res = await fetch(`${API_URL}/CreateDocuments?fileName=${encodeURIComponent(file.name)}`, {
+    method: "POST",
+    headers
+  });
+  const { uploadUrl, fileUrl } = await unwrap(res);
+
+  await fetch(uploadUrl, {
+    method: "PUT",
+    body: file
+  });
+
+  return fileUrl;
+}

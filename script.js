@@ -52,7 +52,7 @@ const overlay = document.getElementById('modalOverlay');
 const modalTitle = document.getElementById('modalTitle');
 const fieldId = document.getElementById('fieldId');
 const fieldName = document.getElementById('fieldName');
-const fieldUrl = document.getElementById('fieldUrl');
+const fieldFile = document.getElementById('fieldFile');
 const fieldDesc = document.getElementById('fieldDesc');
 const modalError = document.getElementById('modalError');
 let editingId = null;
@@ -60,12 +60,12 @@ let editingId = null;
 function openModal(id = null) {
   editingId = id;
   modalError.textContent = '';
+  fieldFile.value = '';
   if (id === null) {
     modalTitle.textContent = 'Add a document';
     fieldId.value = '';
     fieldId.disabled = false;
     fieldName.value = '';
-    fieldUrl.value = '';
     fieldDesc.value = '';
   } else {
     const doc = docsCache.find(d => d.id === id);
@@ -73,7 +73,6 @@ function openModal(id = null) {
     fieldId.value = doc.id;
     fieldId.disabled = true;
     fieldName.value = doc.name || doc.Name || '';
-    fieldUrl.value = doc.url || doc['Doc-url'] || '';
     fieldDesc.value = doc.description || '';
   }
   overlay.classList.add('open');
@@ -93,16 +92,26 @@ overlay.addEventListener('click', e => { if (e.target === overlay) closeModal();
 document.getElementById('saveBtn').addEventListener('click', async () => {
   const id = fieldId.value.trim();
   const name = fieldName.value.trim();
-  const url = fieldUrl.value.trim();
   const description = fieldDesc.value.trim();
+  const file = fieldFile.files[0];
 
-  if (!id || !name || !url) {
-    modalError.textContent = 'ID, Name, and Doc URL are required.';
+  if (!id || !name || (!file && editingId === null)) {
+    modalError.textContent = 'ID, Name, and a file are required.';
     return;
   }
 
   try {
+    let url = editingId !== null
+      ? (docsCache.find(d => d.id === editingId).url || docsCache.find(d => d.id === editingId)['Doc-url'])
+      : null;
+
+    if (file) {
+      modalError.textContent = 'Uploading file...';
+      url = await uploadFile(file);
+    }
+
     const doc = { id, name, url, description, added: new Date().toLocaleDateString() };
+
     if (editingId === null) {
       await createDocument(doc);
     } else {
