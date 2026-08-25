@@ -6,5 +6,5 @@
 //
 // Fill these in once your API Gateway endpoint is ready.
 
-const API_URL = "https://p63ig1syq0.execute-api.us-east-1.amazonaws.com/dev";
-const API_KEY = "4kpYc153Ti4J5eATwf5hP9ietZnvI7N32wr0hA0r";
+const API_URL = "https://6pyrjik2ra.execute-api.us-east-1.amazonaws.com/prod/";
+
