@@ -42,7 +42,7 @@ async function deleteDocument(id) {
 }
 
 async function uploadFile(file) {
-  const res = await fetch(`${API_URL}upload?fileName=${encodeURIComponent(file.name)}`, {
+  const res = await fetch(`${API_URL}upload?fileName=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}`, {
     method: "GET",
     headers,
   });
@@ -50,6 +50,7 @@ async function uploadFile(file) {
 
   await fetch(uploadUrl, {
     method: "PUT",
+    headers: { "Content-Type": file.type },
     body: file,
   });
 
