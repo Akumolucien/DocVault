@@ -1,144 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DocVault — Sign in</title>
-<style>
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: #F4EFE6;
-    color: #2b2b2b;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-  }
-  .card {
-    background: #ffffff;
-    border-radius: 12px;
-    padding: 40px;
-    width: 100%;
-    max-width: 380px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-  }
-  .logo {
-    font-size: 24px;
-    font-weight: 700;
-    margin-bottom: 4px;
-  }
-  .logo span { color: #C9922A; }
-  .subtitle {
-    color: #7a7a7a;
-    font-size: 14px;
-    margin-bottom: 28px;
-  }
-  .tabs {
-    display: flex;
-    margin-bottom: 24px;
-    border-bottom: 1px solid #eee;
-  }
-  .tab {
-    flex: 1;
-    text-align: center;
-    padding: 10px 0;
-    cursor: pointer;
-    font-size: 14px;
-    color: #7a7a7a;
-    border-bottom: 2px solid transparent;
-  }
-  .tab.active {
-    color: #1a1a1a;
-    font-weight: 600;
-    border-bottom: 2px solid #1a1a1a;
-  }
-  label {
-    display: block;
-    font-size: 13px;
-    margin-bottom: 6px;
-    margin-top: 16px;
-    color: #444;
-  }
-  input {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 14px;
-  }
-  input:focus {
-    outline: none;
-    border-color: #C9922A;
-  }
-  .btn {
-    width: 100%;
-    margin-top: 24px;
-    padding: 12px;
-    background: #1a1a1a;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .btn:hover { background: #333; }
-  .note {
-    text-align: center;
-    font-size: 12px;
-    color: #999;
-    margin-top: 18px;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DocVault — Sign in</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="auth-page">
+  <main class="auth-shell">
+    <section class="auth-brand-panel">
+      <div class="brand-mark">DV</div>
+      <h1>Keep your important documents in one secure place.</h1>
+      <p>Upload, organize, open and manage files from your DocVault dashboard.</p>
+      <div class="auth-points">
+        <span>☁️ S3 file storage</span>
+        <span>🔐 Cognito authentication</span>
+        <span>⚡ Serverless AWS backend</span>
+      </div>
+    </section>
 
-<div class="card">
-  <div class="logo">Doc<span>Vault</span></div>
-  <div class="subtitle">Sign in to access your documents</div>
+    <section class="auth-card">
+      <div class="logo large">Doc<span>Vault</span></div>
+      <p class="muted" id="authSubtitle">Sign in to continue to your vault.</p>
 
-  <div class="tabs">
-    <div class="tab active" id="tabLogin">Log in</div>
-    <div class="tab" id="tabSignup">Sign up</div>
-  </div>
+      <div class="auth-tabs" id="authTabs">
+        <button class="auth-tab active" type="button" data-mode="login">Log in</button>
+        <button class="auth-tab" type="button" data-mode="signup">Sign up</button>
+      </div>
 
-  <form id="authForm">
-    <label>Email</label>
-    <input type="email" id="email" placeholder="you@example.com" required>
+      <form id="authForm">
+        <label>Email
+          <input type="email" id="email" placeholder="you@example.com" autocomplete="email" required>
+        </label>
+        <label>Password
+          <input type="password" id="password" placeholder="At least 8 characters" autocomplete="current-password" required>
+        </label>
+        <button type="submit" class="btn primary full" id="submitBtn">Log in</button>
+      </form>
 
-    <label>Password</label>
-    <input type="password" id="password" placeholder="••••••••" required>
+      <form id="confirmForm" class="hidden">
+        <p class="muted">We sent a confirmation code to <strong id="confirmEmail"></strong>.</p>
+        <label>Confirmation code
+          <input type="text" id="confirmationCode" inputmode="numeric" autocomplete="one-time-code" placeholder="Enter code" required>
+        </label>
+        <button type="submit" class="btn primary full">Confirm account</button>
+        <button type="button" class="text-button" id="backToLogin">Back to login</button>
+      </form>
 
-    <button type="submit" class="btn" id="submitBtn">Log in</button>
-  </form>
+      <div id="authMessage" class="auth-message"></div>
+      <p class="auth-footnote">Authentication powered by Amazon Cognito.</p>
+    </section>
+  </main>
 
-  <div class="note">Powered by AWS Cognito — coming soon</div>
-</div>
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    let mode = 'login';
+    let pendingEmail = '';
+    const form = document.getElementById('authForm');
+    const confirmForm = document.getElementById('confirmForm');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const submitBtn = document.getElementById('submitBtn');
+    const message = document.getElementById('authMessage');
 
-<script>
-  const tabLogin = document.getElementById('tabLogin');
-  const tabSignup = document.getElementById('tabSignup');
-  const submitBtn = document.getElementById('submitBtn');
+    if (tokenIsValid(getIdToken())) window.location.href = 'index.html';
 
-  tabLogin.addEventListener('click', () => {
-    tabLogin.classList.add('active');
-    tabSignup.classList.remove('active');
-    submitBtn.textContent = 'Log in';
-  });
+    function showMessage(text, type = 'error') {
+      message.textContent = text;
+      message.className = `auth-message ${type}`;
+    }
 
-  tabSignup.addEventListener('click', () => {
-    tabSignup.classList.add('active');
-    tabLogin.classList.remove('active');
-    submitBtn.textContent = 'Create account';
-  });
+    document.getElementById('authTabs').addEventListener('click', (e) => {
+      const button = e.target.closest('[data-mode]');
+      if (!button) return;
+      mode = button.dataset.mode;
+      document.querySelectorAll('.auth-tab').forEach(tab => tab.classList.toggle('active', tab === button));
+      submitBtn.textContent = mode === 'login' ? 'Log in' : 'Create account';
+      passwordInput.autocomplete = mode === 'login' ? 'current-password' : 'new-password';
+      document.getElementById('authSubtitle').textContent = mode === 'login'
+        ? 'Sign in to continue to your vault.'
+        : 'Create your DocVault account.';
+      showMessage('', '');
+    });
 
-  document.getElementById('authForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    alert('Cognito wiring coming next — this is just the UI for now.');
-  });
-</script>
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = emailInput.value.trim().toLowerCase();
+      const password = passwordInput.value;
+      submitBtn.disabled = true;
+      submitBtn.textContent = mode === 'login' ? 'Signing in...' : 'Creating account...';
+      showMessage('', '');
 
+      try {
+        if (mode === 'login') {
+          await signIn(email, password);
+          window.location.href = 'index.html';
+        } else {
+          const result = await signUp(email, password);
+          if (result.UserConfirmed) {
+            showMessage('Account created. You can now log in.', 'success');
+            mode = 'login';
+            submitBtn.textContent = 'Log in';
+          } else {
+            pendingEmail = email;
+            document.getElementById('confirmEmail').textContent = email;
+            form.classList.add('hidden');
+            document.getElementById('authTabs').classList.add('hidden');
+            confirmForm.classList.remove('hidden');
+            showMessage('Enter the verification code to activate your account.', 'success');
+          }
+        }
+      } catch (err) {
+        if (String(err.message).includes('UserNotConfirmedException')) {
+          pendingEmail = email;
+          document.getElementById('confirmEmail').textContent = email;
+          form.classList.add('hidden');
+          document.getElementById('authTabs').classList.add('hidden');
+          confirmForm.classList.remove('hidden');
+          showMessage('Your account needs confirmation.', 'error');
+        } else {
+          showMessage(err.message);
+        }
+      } finally {
+        submitBtn.disabled = false;
+        if (!form.classList.contains('hidden')) submitBtn.textContent = mode === 'login' ? 'Log in' : 'Create account';
+      }
+    });
+
+    confirmForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const code = document.getElementById('confirmationCode').value.trim();
+      try {
+        await confirmSignUp(pendingEmail, code);
+        confirmForm.classList.add('hidden');
+        form.classList.remove('hidden');
+        document.getElementById('authTabs').classList.remove('hidden');
+        mode = 'login';
+        document.querySelectorAll('.auth-tab').forEach(tab => tab.classList.toggle('active', tab.dataset.mode === 'login'));
+        submitBtn.textContent = 'Log in';
+        showMessage('Account confirmed. Log in with your email and password.', 'success');
+      } catch (err) {
+        showMessage(err.message);
+      }
+    });
+
+    document.getElementById('backToLogin').addEventListener('click', () => {
+      confirmForm.classList.add('hidden');
+      form.classList.remove('hidden');
+      document.getElementById('authTabs').classList.remove('hidden');
+      mode = 'login';
+      submitBtn.textContent = 'Log in';
+      showMessage('', '');
+    });
+  </script>
 </body>
 </html>
