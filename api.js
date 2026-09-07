@@ -115,6 +115,21 @@ async function getDownloadUrl(id) {
 }
 
 
+async function createShareLink(id) {
+  const res = await fetch(
+    `${API_URL}items/${encodeURIComponent(id)}/share`,
+    {
+      method: 'POST',
+      headers: apiHeaders(false)
+    }
+  );
+
+  const data = await unwrap(res);
+
+  return `${API_URL}${data.sharePath}`;
+}
+
+
 async function uploadFile(file) {
   const res = await fetch(
     `${API_URL}upload?fileName=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(

@@ -1,6 +1,6 @@
 let docsCache = [];
-
 let editingId = null;
+
 
 function escapeHtml(value = '') {
   const d = document.createElement('div');
@@ -8,19 +8,31 @@ function escapeHtml(value = '') {
   return d.innerHTML;
 }
 
+
 function docName(doc) {
   return doc.name || doc.Name || 'Untitled document';
 }
+
 
 function documentIcon(doc) {
   const name = (doc.name || '').toLowerCase();
 
   if (name.endsWith('.pdf')) return 'PDF';
-  if (name.endsWith('.doc') || name.endsWith('.docx')) return 'DOC';
-  if (name.match(/\.(png|jpe?g|gif|webp)$/)) return 'IMG';
+
+  if (
+    name.endsWith('.doc') ||
+    name.endsWith('.docx')
+  ) {
+    return 'DOC';
+  }
+
+  if (name.match(/\.(png|jpe?g|gif|webp)$/)) {
+    return 'IMG';
+  }
 
   return 'FILE';
 }
+
 
 async function loadAndRender() {
   try {
@@ -41,6 +53,7 @@ async function loadAndRender() {
       </div>`;
   }
 }
+
 
 function render() {
   const query = document
@@ -64,7 +77,9 @@ function render() {
 
   document.getElementById('count').textContent =
     `${docsCache.length} ${
-      docsCache.length === 1 ? 'document' : 'documents'
+      docsCache.length === 1
+        ? 'document'
+        : 'documents'
     }`;
 
   document.getElementById('countNumber').textContent =
@@ -131,6 +146,13 @@ function render() {
 
         <button
           class="btn ghost compact"
+          data-action="share"
+          data-id="${escapeHtml(doc.id)}">
+          Share
+        </button>
+
+        <button
+          class="btn ghost compact"
           data-action="edit"
           data-id="${escapeHtml(doc.id)}">
           Edit
@@ -184,7 +206,6 @@ function openModal(id = null, droppedFile = null) {
   fieldFile.value = '';
 
   if (id === null) {
-
     modalTitle.textContent =
       'Upload document';
 
@@ -200,7 +221,6 @@ function openModal(id = null, droppedFile = null) {
     fieldDesc.value = '';
 
   } else {
-
     const doc = docsCache.find(
       d => String(d.id) === String(id)
     );
@@ -297,10 +317,6 @@ async function saveDocument() {
         new Date().toLocaleDateString()
     };
 
-    /*
-      Only include a new file URL when
-      the user actually selected a file.
-    */
     if (url) {
       doc.url = url;
     }
@@ -431,7 +447,6 @@ async function init() {
 
   ['dragenter', 'dragover']
     .forEach(type => {
-
       dropZone.addEventListener(
         type,
         e => {
@@ -442,13 +457,11 @@ async function init() {
             .add('drag');
         }
       );
-
     });
 
 
   ['dragleave', 'drop']
     .forEach(type => {
-
       dropZone.addEventListener(
         type,
         e => {
@@ -459,19 +472,16 @@ async function init() {
             .remove('drag');
         }
       );
-
     });
 
 
   dropZone.addEventListener(
     'drop',
     e => {
-
       const file =
         e.dataTransfer.files[0];
 
       if (file) {
-
         openModal(
           null,
           file
@@ -497,7 +507,6 @@ async function init() {
   ).addEventListener(
     'click',
     async e => {
-
       const button =
         e.target.closest(
           '[data-action]'
@@ -513,7 +522,6 @@ async function init() {
 
 
       if (action === 'open') {
-
         try {
           button.disabled = true;
 
@@ -543,6 +551,47 @@ async function init() {
       }
 
 
+      if (action === 'share') {
+        try {
+          button.disabled = true;
+
+          button.textContent =
+            'Creating...';
+
+          const shareUrl =
+            await createShareLink(id);
+
+          try {
+            await navigator.clipboard.writeText(
+              shareUrl
+            );
+
+            alert(
+              'Share link copied to clipboard.\n\n' +
+              shareUrl
+            );
+
+          } catch (_) {
+            prompt(
+              'Copy this share link:',
+              shareUrl
+            );
+          }
+
+        } catch (err) {
+          alert(err.message);
+
+        } finally {
+          button.disabled = false;
+
+          button.textContent =
+            'Share';
+        }
+
+        return;
+      }
+
+
       if (action === 'edit') {
         openModal(id);
 
@@ -551,7 +600,6 @@ async function init() {
 
 
       if (action === 'delete') {
-
         const doc =
           docsCache.find(
             d =>
@@ -565,7 +613,6 @@ async function init() {
             `Delete "${docName(doc)}"?`
           )
         ) {
-
           try {
             button.disabled = true;
 
