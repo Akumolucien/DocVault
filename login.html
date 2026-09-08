@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+
   <meta charset="UTF-8">
 
   <meta
@@ -15,61 +16,43 @@
     rel="stylesheet"
     href="style.css"
   >
+
 </head>
 
 
 <body class="auth-page">
 
-  <main class="auth-shell">
-
-    <section class="auth-brand-panel">
-
-      <div class="brand-mark">
-        DV
-      </div>
-
-      <h1>
-        Keep your important documents
-        in one secure place.
-      </h1>
-
-      <p>
-        Upload, organize, open and manage files
-        from your DocVault dashboard.
-      </p>
-
-      <div class="auth-points">
-
-        <span>
-          ☁️ S3 file storage
-        </span>
-
-        <span>
-          🔐 Secure authentication
-        </span>
-
-        <span>
-          ⚡ Serverless AWS backend
-        </span>
-
-      </div>
-
-    </section>
-
+  <main class="auth-container">
 
     <section class="auth-card">
 
-      <div class="logo large">
-        Doc<span>Vault</span>
+      <div class="auth-logo">
+
+        <div class="brand-icon auth-brand-icon">
+          D
+        </div>
+
+        <div class="logo large">
+          Doc<span>Vault</span>
+        </div>
+
       </div>
 
 
-      <p
-        class="muted"
-        id="authSubtitle"
-      >
-        Sign in to continue to your vault.
-      </p>
+      <div class="auth-heading">
+
+        <h1 id="authTitle">
+          Welcome back
+        </h1>
+
+        <p
+          class="muted"
+          id="authSubtitle"
+        >
+          Sign in to continue to your vault.
+        </p>
+
+      </div>
 
 
       <div
@@ -85,7 +68,6 @@
           Log in
         </button>
 
-
         <button
           class="auth-tab"
           type="button"
@@ -97,12 +79,11 @@
       </div>
 
 
-      <!-- Google -->
-
-      <div id="googleSection">
-
+      <div
+        class="google-section"
+        id="googleSection"
+      >
         <div id="googleButton"></div>
-
       </div>
 
 
@@ -116,13 +97,13 @@
       </div>
 
 
-      <!-- Email/password -->
-
       <form id="authForm">
 
-        <label>
+        <div class="form-group">
 
-          Email
+          <label for="email">
+            Email address
+          </label>
 
           <input
             type="email"
@@ -132,12 +113,14 @@
             required
           >
 
-        </label>
+        </div>
 
 
-        <label>
+        <div class="form-group">
 
-          Password
+          <label for="password">
+            Password
+          </label>
 
           <input
             type="password"
@@ -147,12 +130,12 @@
             required
           >
 
-        </label>
+        </div>
 
 
         <button
           type="submit"
-          class="btn primary full"
+          class="btn primary full auth-submit"
           id="submitBtn"
         >
           Log in
@@ -161,36 +144,41 @@
       </form>
 
 
-      <!-- Confirmation -->
-
       <form
         id="confirmForm"
-        class="hidden"
+        class="hidden confirmation-form"
       >
 
-        <p class="muted">
+        <div class="confirmation-icon">
+          ✉
+        </div>
 
+        <h2>
+          Verify your email
+        </h2>
+
+        <p class="muted confirmation-copy">
           We sent a confirmation code to
-
           <strong id="confirmEmail"></strong>.
-
         </p>
 
 
-        <label>
+        <div class="form-group">
 
-          Confirmation code
+          <label for="confirmationCode">
+            Confirmation code
+          </label>
 
           <input
             type="text"
             id="confirmationCode"
             inputmode="numeric"
             autocomplete="one-time-code"
-            placeholder="Enter code"
+            placeholder="Enter verification code"
             required
           >
 
-        </label>
+        </div>
 
 
         <button
@@ -215,12 +203,13 @@
       <div
         id="authMessage"
         class="auth-message"
+        role="status"
+        aria-live="polite"
       ></div>
 
 
       <p class="auth-footnote">
-        Secure authentication powered by
-        Amazon Cognito and Google.
+        Secure authentication powered by Amazon Cognito and Google.
       </p>
 
     </section>
@@ -228,80 +217,51 @@
   </main>
 
 
-  <!-- Google Identity Services -->
-
   <script
     src="https://accounts.google.com/gsi/client"
     async
     defer
   ></script>
 
-
-  <!-- DocVault -->
-
   <script src="config.js"></script>
-
   <script src="auth.js"></script>
 
 
   <script>
 
     let mode = 'login';
-
     let pendingEmail = '';
 
-
     const form =
-      document.getElementById(
-        'authForm'
-      );
-
+      document.getElementById('authForm');
 
     const confirmForm =
-      document.getElementById(
-        'confirmForm'
-      );
-
+      document.getElementById('confirmForm');
 
     const emailInput =
-      document.getElementById(
-        'email'
-      );
-
+      document.getElementById('email');
 
     const passwordInput =
-      document.getElementById(
-        'password'
-      );
-
+      document.getElementById('password');
 
     const submitBtn =
-      document.getElementById(
-        'submitBtn'
-      );
-
+      document.getElementById('submitBtn');
 
     const googleSection =
-      document.getElementById(
-        'googleSection'
-      );
-
+      document.getElementById('googleSection');
 
     const authDivider =
-      document.getElementById(
-        'authDivider'
-      );
-
+      document.getElementById('authDivider');
 
     const message =
-      document.getElementById(
-        'authMessage'
-      );
+      document.getElementById('authMessage');
 
+    const authTitle =
+      document.getElementById('authTitle');
 
-    /*
-      Existing session
-    */
+    const authSubtitle =
+      document.getElementById('authSubtitle');
+
 
     if (
       typeof getApiToken === 'function' &&
@@ -339,29 +299,83 @@
     }
 
 
+    function updateModeUI() {
+
+      document
+        .querySelectorAll('.auth-tab')
+        .forEach(tab => {
+
+          tab.classList.toggle(
+            'active',
+            tab.dataset.mode === mode
+          );
+
+        });
+
+
+      if (
+        mode === 'login'
+      ) {
+
+        authTitle.textContent =
+          'Welcome back';
+
+        authSubtitle.textContent =
+          'Sign in to continue to your vault.';
+
+        submitBtn.textContent =
+          'Log in';
+
+        passwordInput.autocomplete =
+          'current-password';
+
+      } else {
+
+        authTitle.textContent =
+          'Create your account';
+
+        authSubtitle.textContent =
+          'Start securely storing your documents with DocVault.';
+
+        submitBtn.textContent =
+          'Create account';
+
+        passwordInput.autocomplete =
+          'new-password';
+
+      }
+
+    }
+
+
     function hideMainAuthentication() {
 
       form.classList.add(
         'hidden'
       );
 
-
       document
-        .getElementById(
-          'authTabs'
-        )
+        .getElementById('authTabs')
         .classList.add(
           'hidden'
         );
-
 
       googleSection
         .classList.add(
           'hidden'
         );
 
-
       authDivider
+        .classList.add(
+          'hidden'
+        );
+
+      authTitle
+        .classList.add(
+          'hidden'
+        );
+
+      authSubtitle
         .classList.add(
           'hidden'
         );
@@ -375,23 +389,28 @@
         'hidden'
       );
 
-
       document
-        .getElementById(
-          'authTabs'
-        )
+        .getElementById('authTabs')
         .classList.remove(
           'hidden'
         );
-
 
       googleSection
         .classList.remove(
           'hidden'
         );
 
-
       authDivider
+        .classList.remove(
+          'hidden'
+        );
+
+      authTitle
+        .classList.remove(
+          'hidden'
+        );
+
+      authSubtitle
         .classList.remove(
           'hidden'
         );
@@ -399,77 +418,25 @@
     }
 
 
-    /*
-      Login / signup tabs
-    */
-
     document
-      .getElementById(
-        'authTabs'
-      )
+      .getElementById('authTabs')
       .addEventListener(
-
         'click',
-
-        (e) => {
+        e => {
 
           const button =
             e.target.closest(
               '[data-mode]'
             );
 
-
           if (!button) {
             return;
           }
 
-
           mode =
             button.dataset.mode;
 
-
-          document
-            .querySelectorAll(
-              '.auth-tab'
-            )
-            .forEach(
-
-              tab =>
-
-                tab
-                  .classList
-                  .toggle(
-                    'active',
-                    tab === button
-                  )
-
-            );
-
-
-          submitBtn.textContent =
-            mode === 'login'
-              ? 'Log in'
-              : 'Create account';
-
-
-          passwordInput.autocomplete =
-            mode === 'login'
-              ? 'current-password'
-              : 'new-password';
-
-
-          document
-            .getElementById(
-              'authSubtitle'
-            )
-            .textContent =
-
-              mode === 'login'
-
-                ? 'Sign in to continue to your vault.'
-
-                : 'Create your DocVault account.';
-
+          updateModeUI();
 
           showMessage(
             '',
@@ -477,22 +444,14 @@
           );
 
         }
-
       );
 
 
-    /*
-      Email login / signup
-    */
-
     form.addEventListener(
-
       'submit',
-
-      async (e) => {
+      async e => {
 
         e.preventDefault();
-
 
         const email =
           emailInput
@@ -500,23 +459,16 @@
             .trim()
             .toLowerCase();
 
-
         const password =
           passwordInput.value;
-
 
         submitBtn.disabled =
           true;
 
-
         submitBtn.textContent =
-
           mode === 'login'
-
             ? 'Signing in...'
-
             : 'Creating account...';
-
 
         showMessage(
           '',
@@ -535,13 +487,10 @@
               password
             );
 
-
             window.location.href =
               'index.html';
 
-          }
-
-          else {
+          } else {
 
             const result =
               await signUp(
@@ -554,48 +503,20 @@
               result.UserConfirmed
             ) {
 
+              mode =
+                'login';
+
+              updateModeUI();
+
               showMessage(
                 'Account created. You can now log in.',
                 'success'
               );
 
-
-              mode =
-                'login';
-
-
-              submitBtn.textContent =
-                'Log in';
-
-
-              document
-                .querySelectorAll(
-                  '.auth-tab'
-                )
-                .forEach(
-
-                  tab =>
-
-                    tab
-                      .classList
-                      .toggle(
-
-                        'active',
-
-                        tab.dataset.mode ===
-                          'login'
-
-                      )
-
-                );
-
-            }
-
-            else {
+            } else {
 
               pendingEmail =
                 email;
-
 
               document
                 .getElementById(
@@ -604,9 +525,7 @@
                 .textContent =
                   email;
 
-
               hideMainAuthentication();
-
 
               confirmForm
                 .classList
@@ -614,37 +533,27 @@
                   'hidden'
                 );
 
-
               showMessage(
-
-                'Enter the verification code to activate your account.',
-
-                'success'
-
+                '',
+                ''
               );
 
             }
 
           }
 
-        }
-
-        catch (err) {
+        } catch (err) {
 
           if (
-
             String(
               err.message
+            ).includes(
+              'UserNotConfirmedException'
             )
-              .includes(
-                'UserNotConfirmedException'
-              )
-
           ) {
 
             pendingEmail =
               email;
-
 
             document
               .getElementById(
@@ -653,9 +562,7 @@
               .textContent =
                 email;
 
-
             hideMainAuthentication();
-
 
             confirmForm
               .classList
@@ -663,15 +570,7 @@
                 'hidden'
               );
 
-
-            showMessage(
-              'Your account needs confirmation.',
-              'error'
-            );
-
-          }
-
-          else {
+          } else {
 
             showMessage(
               err.message
@@ -679,56 +578,36 @@
 
           }
 
-        }
-
-        finally {
+        } finally {
 
           submitBtn.disabled =
             false;
 
-
           if (
-
             !form
               .classList
               .contains(
                 'hidden'
               )
-
           ) {
 
-            submitBtn.textContent =
-
-              mode === 'login'
-
-                ? 'Log in'
-
-                : 'Create account';
+            updateModeUI();
 
           }
 
         }
 
       }
-
     );
 
 
-    /*
-      Confirmation code
-    */
-
     confirmForm.addEventListener(
-
       'submit',
-
-      async (e) => {
+      async e => {
 
         e.preventDefault();
 
-
         const code =
-
           document
             .getElementById(
               'confirmationCode'
@@ -744,71 +623,25 @@
             code
           );
 
-
           confirmForm
             .classList
             .add(
               'hidden'
             );
 
-
           showMainAuthentication();
-
 
           mode =
             'login';
 
-
-          document
-            .querySelectorAll(
-              '.auth-tab'
-            )
-            .forEach(
-
-              tab =>
-
-                tab
-                  .classList
-                  .toggle(
-
-                    'active',
-
-                    tab.dataset.mode ===
-                      'login'
-
-                  )
-
-            );
-
-
-          submitBtn.textContent =
-            'Log in';
-
-
-          passwordInput.autocomplete =
-            'current-password';
-
-
-          document
-            .getElementById(
-              'authSubtitle'
-            )
-            .textContent =
-
-              'Sign in to continue to your vault.';
-
+          updateModeUI();
 
           showMessage(
-
-            'Account confirmed. Log in with your email and password.',
-
+            'Account confirmed. You can now log in.',
             'success'
-
           );
 
-        }
-
-        catch (err) {
+        } catch (err) {
 
           showMessage(
             err.message
@@ -817,22 +650,15 @@
         }
 
       }
-
     );
 
-
-    /*
-      Back to login
-    */
 
     document
       .getElementById(
         'backToLogin'
       )
       .addEventListener(
-
         'click',
-
         () => {
 
           confirmForm
@@ -841,52 +667,12 @@
               'hidden'
             );
 
-
           showMainAuthentication();
-
 
           mode =
             'login';
 
-
-          document
-            .querySelectorAll(
-              '.auth-tab'
-            )
-            .forEach(
-
-              tab =>
-
-                tab
-                  .classList
-                  .toggle(
-
-                    'active',
-
-                    tab.dataset.mode ===
-                      'login'
-
-                  )
-
-            );
-
-
-          submitBtn.textContent =
-            'Log in';
-
-
-          passwordInput.autocomplete =
-            'current-password';
-
-
-          document
-            .getElementById(
-              'authSubtitle'
-            )
-            .textContent =
-
-              'Sign in to continue to your vault.';
-
+          updateModeUI();
 
           showMessage(
             '',
@@ -894,11 +680,9 @@
           );
 
         }
-
       );
 
   </script>
 
 </body>
-
 </html>

@@ -1,23 +1,39 @@
 let docsCache = [];
 let editingId = null;
+let deleteTargetId = null;
+let toastTimer = null;
 
 
 function escapeHtml(value = '') {
-  const d = document.createElement('div');
-  d.textContent = String(value);
-  return d.innerHTML;
+  const div =
+    document.createElement('div');
+
+  div.textContent =
+    String(value);
+
+  return div.innerHTML;
 }
 
 
 function docName(doc) {
-  return doc.name || doc.Name || 'Untitled document';
+  return (
+    doc.name ||
+    doc.Name ||
+    'Untitled document'
+  );
 }
 
 
 function documentIcon(doc) {
-  const name = (doc.name || '').toLowerCase();
+  const name =
+    docName(doc)
+      .toLowerCase();
 
-  if (name.endsWith('.pdf')) return 'PDF';
+  if (
+    name.endsWith('.pdf')
+  ) {
+    return 'PDF';
+  }
 
   if (
     name.endsWith('.doc') ||
@@ -26,319 +42,995 @@ function documentIcon(doc) {
     return 'DOC';
   }
 
-  if (name.match(/\.(png|jpe?g|gif|webp)$/)) {
+  if (
+    name.endsWith('.xls') ||
+    name.endsWith('.xlsx')
+  ) {
+    return 'XLS';
+  }
+
+  if (
+    name.endsWith('.ppt') ||
+    name.endsWith('.pptx')
+  ) {
+    return 'PPT';
+  }
+
+  if (
+    name.match(
+      /\.(png|jpe?g|gif|webp)$/i
+    )
+  ) {
     return 'IMG';
+  }
+
+  if (
+    name.endsWith('.txt')
+  ) {
+    return 'TXT';
   }
 
   return 'FILE';
 }
 
 
-async function loadAndRender() {
-  try {
-    docsCache = await getDocuments();
+function showToast(
+  text,
+  type = 'success'
+) {
+  const toast =
+    document.getElementById(
+      'toast'
+    );
 
-    if (!Array.isArray(docsCache)) {
+  clearTimeout(
+    toastTimer
+  );
+
+  toast.textContent =
+    text;
+
+  toast.className =
+    `toast ${type} show`;
+
+  toastTimer =
+    setTimeout(
+      () => {
+        toast.className =
+          'toast';
+      },
+      3200
+    );
+}
+
+
+function setOverlay(
+  overlay,
+  open
+) {
+  overlay.classList.toggle(
+    'open',
+    open
+  );
+
+  overlay.setAttribute(
+    'aria-hidden',
+    String(!open)
+  );
+
+  document.body.style.overflow =
+    open
+      ? 'hidden'
+      : '';
+}
+
+
+async function loadAndRender() {
+  const loadingState =
+    document.getElementById(
+      'loadingState'
+    );
+
+  const docList =
+    document.getElementById(
+      'docList'
+    );
+
+  const empty =
+    document.getElementById(
+      'emptyState'
+    );
+
+  loadingState.style.display =
+    'flex';
+
+  docList.style.display =
+    'none';
+
+  empty.style.display =
+    'none';
+
+
+  try {
+
+    docsCache =
+      await getDocuments();
+
+    if (
+      !Array.isArray(
+        docsCache
+      )
+    ) {
       docsCache = [];
     }
+
+    loadingState.style.display =
+      'none';
+
+    docList.style.display =
+      'grid';
 
     render();
 
   } catch (err) {
-    console.error(err);
 
-    document.getElementById('docList').innerHTML =
-      `<div class="error-card">
-        Couldn't load documents: ${escapeHtml(err.message)}
-      </div>`;
+    console.error(
+      err
+    );
+
+    loadingState.style.display =
+      'none';
+
+    docList.style.display =
+      'block';
+
+    docList.innerHTML = `
+      <div class="error-card">
+        Couldn't load documents:
+        ${escapeHtml(err.message)}
+      </div>
+    `;
+
   }
+}
+
+
+function getFilteredDocuments() {
+  const query =
+    document
+      .getElementById(
+        'searchInput'
+      )
+      .value
+      .trim()
+      .toLowerCase();
+
+  const sort =
+    document
+      .getElementById(
+        'sortSelect'
+      )
+      .value;
+
+
+  let filtered =
+    docsCache.filter(
+      doc => {
+
+        const haystack = `
+          ${docName(doc)}
+          ${doc.description || ''}
+          ${doc.id || ''}
+        `
+          .toLowerCase();
+
+        return haystack
+          .includes(
+            query
+          );
+
+      }
+    );
+
+
+  if (
+    sort === 'name'
+  ) {
+
+    filtered =
+      [...filtered]
+        .sort(
+          (a, b) =>
+            docName(a)
+              .localeCompare(
+                docName(b)
+              )
+        );
+
+  }
+
+
+  return filtered;
 }
 
 
 function render() {
-  const query = document
-    .getElementById('searchInput')
-    .value
-    .trim()
-    .toLowerCase();
+  const filtered =
+    getFilteredDocuments();
 
-  const filtered = docsCache.filter(doc => {
-    const haystack = `
-      ${docName(doc)}
-      ${doc.description || ''}
-      ${doc.id || ''}
-    `.toLowerCase();
+  const list =
+    document.getElementById(
+      'docList'
+    );
 
-    return haystack.includes(query);
-  });
+  const empty =
+    document.getElementById(
+      'emptyState'
+    );
 
-  const list = document.getElementById('docList');
-  const empty = document.getElementById('emptyState');
-
-  document.getElementById('count').textContent =
-    `${docsCache.length} ${
-      docsCache.length === 1
-        ? 'document'
-        : 'documents'
-    }`;
-
-  document.getElementById('countNumber').textContent =
+  const count =
     docsCache.length;
 
-  list.innerHTML = '';
 
-  if (filtered.length === 0) {
-    empty.style.display = 'flex';
+  document
+    .getElementById(
+      'count'
+    )
+    .textContent =
+      `${count} ${
+        count === 1
+          ? 'document'
+          : 'documents'
+      }`;
 
-    empty.querySelector('strong').textContent =
+
+  document
+    .getElementById(
+      'countNumber'
+    )
+    .textContent =
+      count;
+
+
+  list.innerHTML =
+    '';
+
+
+  if (
+    filtered.length === 0
+  ) {
+
+    empty.style.display =
+      'flex';
+
+    list.style.display =
+      'none';
+
+
+    const title =
+      empty.querySelector(
+        'strong'
+      );
+
+    const description =
+      empty.querySelector(
+        ':scope > span'
+      );
+
+    const uploadButton =
+      document.getElementById(
+        'emptyUploadBtn'
+      );
+
+
+    if (
       docsCache.length
-        ? 'No matching documents'
-        : 'No documents yet';
+    ) {
 
-    empty.querySelector('span:last-child').textContent =
-      docsCache.length
-        ? 'Try a different search.'
-        : 'Upload your first document to get started.';
+      title.textContent =
+        'No matching documents';
+
+      description.textContent =
+        'Try a different search.';
+
+      uploadButton.style.display =
+        'none';
+
+    } else {
+
+      title.textContent =
+        'No documents yet';
+
+      description.textContent =
+        'Upload your first document to get started.';
+
+      uploadButton.style.display =
+        'inline-flex';
+
+    }
 
     return;
+
   }
 
-  empty.style.display = 'none';
 
-  filtered.forEach(doc => {
-    const row = document.createElement('article');
+  empty.style.display =
+    'none';
 
-    row.className = 'doc-row';
+  list.style.display =
+    'grid';
 
-    row.innerHTML = `
-      <div class="file-badge">
-        ${documentIcon(doc)}
-      </div>
 
-      <div class="doc-info">
+  filtered.forEach(
+    doc => {
 
-        <div class="doc-name">
-          ${escapeHtml(docName(doc))}
+      const row =
+        document.createElement(
+          'article'
+        );
+
+      row.className =
+        'doc-row';
+
+
+      row.innerHTML = `
+        <div class="file-badge">
+          ${documentIcon(doc)}
         </div>
 
-        <div class="doc-meta">
-          ${escapeHtml(
-            doc.description || 'No description'
-          )}
+        <div class="doc-info">
+
+          <div
+            class="doc-name"
+            title="${escapeHtml(
+              docName(doc)
+            )}"
+          >
+            ${escapeHtml(
+              docName(doc)
+            )}
+          </div>
+
+          <div class="doc-meta">
+            ${escapeHtml(
+              doc.description ||
+              'No description'
+            )}
+          </div>
+
+          <div class="doc-meta small">
+            ID ${escapeHtml(
+              doc.id || ''
+            )}
+            ·
+            Added ${escapeHtml(
+              doc.added || '—'
+            )}
+          </div>
+
         </div>
 
-        <div class="doc-meta small">
-          ID ${escapeHtml(doc.id || '')}
-          ·
-          Added ${escapeHtml(doc.added || '—')}
+        <div class="doc-actions">
+
+          <button
+            type="button"
+            class="btn secondary compact"
+            data-action="open"
+            data-id="${escapeHtml(
+              doc.id
+            )}"
+          >
+            Open
+          </button>
+
+          <button
+            type="button"
+            class="btn secondary compact"
+            data-action="share"
+            data-id="${escapeHtml(
+              doc.id
+            )}"
+          >
+            Share
+          </button>
+
+          <button
+            type="button"
+            class="btn secondary compact"
+            data-action="edit"
+            data-id="${escapeHtml(
+              doc.id
+            )}"
+          >
+            Edit
+          </button>
+
+          <button
+            type="button"
+            class="btn secondary compact danger"
+            data-action="delete"
+            data-id="${escapeHtml(
+              doc.id
+            )}"
+          >
+            Delete
+          </button>
+
         </div>
+      `;
 
-      </div>
 
-      <div class="doc-actions">
+      list.appendChild(
+        row
+      );
 
-        <button
-          class="btn ghost compact"
-          data-action="open"
-          data-id="${escapeHtml(doc.id)}">
-          Open
-        </button>
-
-        <button
-          class="btn ghost compact"
-          data-action="share"
-          data-id="${escapeHtml(doc.id)}">
-          Share
-        </button>
-
-        <button
-          class="btn ghost compact"
-          data-action="edit"
-          data-id="${escapeHtml(doc.id)}">
-          Edit
-        </button>
-
-        <button
-          class="btn ghost compact danger"
-          data-action="delete"
-          data-id="${escapeHtml(doc.id)}">
-          Delete
-        </button>
-
-      </div>
-    `;
-
-    list.appendChild(row);
-  });
+    }
+  );
 }
 
 
 const overlay =
-  document.getElementById('modalOverlay');
+  document.getElementById(
+    'modalOverlay'
+  );
+
+const shareOverlay =
+  document.getElementById(
+    'shareOverlay'
+  );
+
+const deleteOverlay =
+  document.getElementById(
+    'deleteOverlay'
+  );
 
 const modalTitle =
-  document.getElementById('modalTitle');
+  document.getElementById(
+    'modalTitle'
+  );
+
+const modalSubtitle =
+  document.getElementById(
+    'modalSubtitle'
+  );
 
 const fieldId =
-  document.getElementById('fieldId');
+  document.getElementById(
+    'fieldId'
+  );
 
 const fieldName =
-  document.getElementById('fieldName');
+  document.getElementById(
+    'fieldName'
+  );
 
 const fieldFile =
-  document.getElementById('fieldFile');
+  document.getElementById(
+    'fieldFile'
+  );
 
 const fieldDesc =
-  document.getElementById('fieldDesc');
+  document.getElementById(
+    'fieldDesc'
+  );
 
 const modalError =
-  document.getElementById('modalError');
+  document.getElementById(
+    'modalError'
+  );
 
 const saveBtn =
-  document.getElementById('saveBtn');
+  document.getElementById(
+    'saveBtn'
+  );
 
 
-function openModal(id = null, droppedFile = null) {
-  editingId = id;
+function openModal(
+  id = null,
+  droppedFile = null
+) {
+  editingId =
+    id;
 
-  modalError.textContent = '';
+  modalError.textContent =
+    '';
 
-  fieldFile.value = '';
+  fieldFile.value =
+    '';
 
-  if (id === null) {
+
+  if (
+    id === null
+  ) {
+
     modalTitle.textContent =
       'Upload document';
 
+    modalSubtitle.textContent =
+      'Add a file and its details to your vault.';
+
     fieldId.value =
-      `DOC-${Date.now().toString().slice(-6)}`;
+      `DOC-${
+        Date.now()
+          .toString()
+          .slice(-6)
+      }`;
 
-    fieldId.disabled = false;
+    fieldId.disabled =
+      false;
 
-    fieldName.value = droppedFile
-      ? droppedFile.name.replace(/\.[^.]+$/, '')
-      : '';
+    fieldName.value =
+      droppedFile
+        ? droppedFile.name
+        : '';
 
-    fieldDesc.value = '';
+    fieldDesc.value =
+      '';
+
+    document
+      .getElementById(
+        'fileGroup'
+      )
+      .style.display =
+        'block';
 
   } else {
-    const doc = docsCache.find(
-      d => String(d.id) === String(id)
-    );
 
-    if (!doc) return;
+    const doc =
+      docsCache.find(
+        item =>
+          String(item.id) ===
+          String(id)
+      );
+
+    if (!doc) {
+      return;
+    }
 
     modalTitle.textContent =
       'Edit document';
 
-    fieldId.value = doc.id;
+    modalSubtitle.textContent =
+      'Update this document’s information.';
 
-    fieldId.disabled = true;
+    fieldId.value =
+      doc.id;
+
+    fieldId.disabled =
+      true;
 
     fieldName.value =
       docName(doc);
 
     fieldDesc.value =
       doc.description || '';
+
+    document
+      .getElementById(
+        'fileGroup'
+      )
+      .style.display =
+        'none';
+
   }
 
-  overlay.classList.add('open');
 
-  fieldName.focus();
+  setOverlay(
+    overlay,
+    true
+  );
+
+  setTimeout(
+    () => {
+      fieldName.focus();
+    },
+    50
+  );
 }
 
 
 function closeModal() {
-  overlay.classList.remove('open');
+  setOverlay(
+    overlay,
+    false
+  );
 
-  editingId = null;
+  editingId =
+    null;
 
-  saveBtn.disabled = false;
+  saveBtn.disabled =
+    false;
 
   saveBtn.textContent =
     'Save document';
+
+  modalError.textContent =
+    '';
 }
 
 
 async function saveDocument() {
   const id =
-    fieldId.value.trim();
+    fieldId
+      .value
+      .trim();
 
   const name =
-    fieldName.value.trim();
+    fieldName
+      .value
+      .trim();
 
   const description =
-    fieldDesc.value.trim();
+    fieldDesc
+      .value
+      .trim();
 
   const file =
-    fieldFile.files[0];
+    fieldFile
+      .files[0];
+
 
   if (
     !id ||
     !name ||
-    (!file && editingId === null)
+    (
+      !file &&
+      editingId === null
+    )
   ) {
+
     modalError.textContent =
-      'Document ID, name and file are required.';
+      'Please complete all required fields.';
 
     return;
+
   }
 
+
   try {
-    saveBtn.disabled = true;
+
+    saveBtn.disabled =
+      true;
 
     saveBtn.textContent =
       file
         ? 'Uploading...'
         : 'Saving...';
 
-    modalError.textContent = '';
+    modalError.textContent =
+      '';
+
 
     const existing =
       editingId !== null
         ? docsCache.find(
-            d =>
-              String(d.id) ===
+            doc =>
+              String(doc.id) ===
               String(editingId)
           )
         : null;
 
-    let url = null;
+
+    let url =
+      null;
+
 
     if (file) {
-      url = await uploadFile(file);
+      url =
+        await uploadFile(
+          file
+        );
     }
+
 
     const doc = {
       id,
       name,
       description,
+
       added:
         existing?.added ||
-        new Date().toLocaleDateString()
+        new Date()
+          .toLocaleDateString()
     };
 
+
     if (url) {
-      doc.url = url;
+      doc.url =
+        url;
     }
 
-    if (editingId === null) {
-      await createDocument(doc);
+
+    if (
+      editingId === null
+    ) {
+
+      await createDocument(
+        doc
+      );
+
+      showToast(
+        'Document uploaded successfully.'
+      );
+
     } else {
-      await updateDocument(doc);
+
+      await updateDocument(
+        doc
+      );
+
+      showToast(
+        'Document updated successfully.'
+      );
+
     }
 
-    await loadAndRender();
 
     closeModal();
 
+    await loadAndRender();
+
   } catch (err) {
+
     modalError.textContent =
       err.message;
 
-    saveBtn.disabled = false;
+    saveBtn.disabled =
+      false;
 
     saveBtn.textContent =
       'Save document';
+
+  }
+}
+
+
+function openShareModal(
+  link
+) {
+  document
+    .getElementById(
+      'shareLinkInput'
+    )
+    .value =
+      link;
+
+  setOverlay(
+    shareOverlay,
+    true
+  );
+}
+
+
+function closeShareModal() {
+  setOverlay(
+    shareOverlay,
+    false
+  );
+}
+
+
+function openDeleteModal(
+  id
+) {
+  const doc =
+    docsCache.find(
+      item =>
+        String(item.id) ===
+        String(id)
+    );
+
+  if (!doc) {
+    return;
+  }
+
+
+  deleteTargetId =
+    id;
+
+  document
+    .getElementById(
+      'deleteMessage'
+    )
+    .textContent =
+      `"${
+        docName(doc)
+      }" will be permanently deleted.`;
+
+  setOverlay(
+    deleteOverlay,
+    true
+  );
+}
+
+
+function closeDeleteModal() {
+  deleteTargetId =
+    null;
+
+  setOverlay(
+    deleteOverlay,
+    false
+  );
+}
+
+
+async function confirmDelete() {
+  if (
+    !deleteTargetId
+  ) {
+    return;
+  }
+
+
+  const button =
+    document.getElementById(
+      'confirmDeleteBtn'
+    );
+
+  try {
+
+    button.disabled =
+      true;
+
+    button.textContent =
+      'Deleting...';
+
+
+    await deleteDocument(
+      deleteTargetId
+    );
+
+
+    closeDeleteModal();
+
+    showToast(
+      'Document deleted.'
+    );
+
+    await loadAndRender();
+
+  } catch (err) {
+
+    showToast(
+      err.message,
+      'error'
+    );
+
+  } finally {
+
+    button.disabled =
+      false;
+
+    button.textContent =
+      'Delete document';
+
+  }
+}
+
+
+async function handleDocumentAction(
+  button
+) {
+  const id =
+    button.dataset.id;
+
+  const action =
+    button.dataset.action;
+
+
+  if (
+    action === 'open'
+  ) {
+
+    const originalText =
+      button.textContent;
+
+    try {
+
+      button.disabled =
+        true;
+
+      button.textContent =
+        'Opening...';
+
+      const downloadUrl =
+        await getDownloadUrl(
+          id
+        );
+
+      window.open(
+        downloadUrl,
+        '_blank',
+        'noopener'
+      );
+
+    } catch (err) {
+
+      showToast(
+        err.message,
+        'error'
+      );
+
+    } finally {
+
+      button.disabled =
+        false;
+
+      button.textContent =
+        originalText;
+
+    }
+
+    return;
+  }
+
+
+  if (
+    action === 'share'
+  ) {
+
+    const originalText =
+      button.textContent;
+
+    try {
+
+      button.disabled =
+        true;
+
+      button.textContent =
+        'Creating...';
+
+      const shareUrl =
+        await createShareLink(
+          id
+        );
+
+      openShareModal(
+        shareUrl
+      );
+
+    } catch (err) {
+
+      showToast(
+        err.message,
+        'error'
+      );
+
+    } finally {
+
+      button.disabled =
+        false;
+
+      button.textContent =
+        originalText;
+
+    }
+
+    return;
+  }
+
+
+  if (
+    action === 'edit'
+  ) {
+
+    openModal(
+      id
+    );
+
+    return;
+  }
+
+
+  if (
+    action === 'delete'
+  ) {
+
+    openDeleteModal(
+      id
+    );
+
   }
 }
 
@@ -347,7 +1039,10 @@ async function init() {
   const ok =
     await ensureAuthenticated();
 
-  if (!ok) return;
+  if (!ok) {
+    return;
+  }
+
 
   const user =
     getCurrentUser();
@@ -357,80 +1052,243 @@ async function init() {
     user.username ||
     'User';
 
-  document.getElementById(
-    'userEmail'
-  ).textContent = display;
 
-  document.getElementById(
-    'avatar'
-  ).textContent =
-    display.charAt(0).toUpperCase();
-
-
-  document.getElementById(
-    'logoutBtn'
-  ).addEventListener(
-    'click',
-    logout
-  );
+  document
+    .getElementById(
+      'userEmail'
+    )
+    .textContent =
+      display;
 
 
-  document.getElementById(
-    'uploadBtn'
-  ).addEventListener(
-    'click',
-    () => openModal()
-  );
+  document
+    .getElementById(
+      'avatar'
+    )
+    .textContent =
+      display
+        .charAt(0)
+        .toUpperCase();
 
 
-  document.getElementById(
-    'sideUpload'
-  ).addEventListener(
-    'click',
-    () => openModal()
-  );
+  document
+    .getElementById(
+      'logoutBtn'
+    )
+    .addEventListener(
+      'click',
+      logout
+    );
 
 
-  document.getElementById(
-    'cancelBtn'
-  ).addEventListener(
-    'click',
-    closeModal
-  );
+  document
+    .getElementById(
+      'uploadBtn'
+    )
+    .addEventListener(
+      'click',
+      () =>
+        openModal()
+    );
 
 
-  document.getElementById(
-    'closeModalBtn'
-  ).addEventListener(
-    'click',
-    closeModal
-  );
+  document
+    .getElementById(
+      'emptyUploadBtn'
+    )
+    .addEventListener(
+      'click',
+      () =>
+        openModal()
+    );
 
 
-  document.getElementById(
-    'saveBtn'
-  ).addEventListener(
+  document
+    .getElementById(
+      'cancelBtn'
+    )
+    .addEventListener(
+      'click',
+      closeModal
+    );
+
+
+  document
+    .getElementById(
+      'closeModalBtn'
+    )
+    .addEventListener(
+      'click',
+      closeModal
+    );
+
+
+  saveBtn.addEventListener(
     'click',
     saveDocument
   );
 
 
-  document.getElementById(
-    'searchInput'
-  ).addEventListener(
-    'input',
-    render
-  );
+  document
+    .getElementById(
+      'searchInput'
+    )
+    .addEventListener(
+      'input',
+      render
+    );
+
+
+  document
+    .getElementById(
+      'sortSelect'
+    )
+    .addEventListener(
+      'change',
+      render
+    );
 
 
   overlay.addEventListener(
     'click',
     e => {
-      if (e.target === overlay) {
+
+      if (
+        e.target === overlay
+      ) {
         closeModal();
       }
+
     }
   );
+
+
+  shareOverlay.addEventListener(
+    'click',
+    e => {
+
+      if (
+        e.target ===
+        shareOverlay
+      ) {
+        closeShareModal();
+      }
+
+    }
+  );
+
+
+  deleteOverlay.addEventListener(
+    'click',
+    e => {
+
+      if (
+        e.target ===
+        deleteOverlay
+      ) {
+        closeDeleteModal();
+      }
+
+    }
+  );
+
+
+  document
+    .getElementById(
+      'closeShareBtn'
+    )
+    .addEventListener(
+      'click',
+      closeShareModal
+    );
+
+
+  document
+    .getElementById(
+      'copyShareBtn'
+    )
+    .addEventListener(
+      'click',
+      async () => {
+
+        const input =
+          document.getElementById(
+            'shareLinkInput'
+          );
+
+        try {
+
+          await navigator
+            .clipboard
+            .writeText(
+              input.value
+            );
+
+          showToast(
+            'Share link copied.'
+          );
+
+        } catch {
+
+          input.select();
+
+          document.execCommand(
+            'copy'
+          );
+
+          showToast(
+            'Share link copied.'
+          );
+
+        }
+
+      }
+    );
+
+
+  document
+    .getElementById(
+      'cancelDeleteBtn'
+    )
+    .addEventListener(
+      'click',
+      closeDeleteModal
+    );
+
+
+  document
+    .getElementById(
+      'confirmDeleteBtn'
+    )
+    .addEventListener(
+      'click',
+      confirmDelete
+    );
+
+
+  document
+    .getElementById(
+      'docList'
+    )
+    .addEventListener(
+      'click',
+      async e => {
+
+        const button =
+          e.target.closest(
+            '[data-action]'
+          );
+
+        if (!button) {
+          return;
+        }
+
+        await handleDocumentAction(
+          button
+        );
+
+      }
+    );
 
 
   const dropZone =
@@ -439,194 +1297,143 @@ async function init() {
     );
 
 
-  dropZone.addEventListener(
-    'click',
-    () => openModal()
+  [
+    'dragenter',
+    'dragover'
+  ].forEach(
+    type => {
+
+      dropZone.addEventListener(
+        type,
+        e => {
+
+          e.preventDefault();
+
+          dropZone
+            .classList
+            .add(
+              'drag'
+            );
+
+        }
+      );
+
+    }
   );
 
 
-  ['dragenter', 'dragover']
-    .forEach(type => {
+  [
+    'dragleave',
+    'drop'
+  ].forEach(
+    type => {
+
       dropZone.addEventListener(
         type,
         e => {
+
           e.preventDefault();
 
           dropZone
             .classList
-            .add('drag');
+            .remove(
+              'drag'
+            );
+
         }
       );
-    });
 
-
-  ['dragleave', 'drop']
-    .forEach(type => {
-      dropZone.addEventListener(
-        type,
-        e => {
-          e.preventDefault();
-
-          dropZone
-            .classList
-            .remove('drag');
-        }
-      );
-    });
+    }
+  );
 
 
   dropZone.addEventListener(
     'drop',
     e => {
-      const file =
-        e.dataTransfer.files[0];
 
-      if (file) {
-        openModal(
-          null,
+      const file =
+        e.dataTransfer
+          .files[0];
+
+      if (!file) {
+        return;
+      }
+
+
+      openModal(
+        null,
+        file
+      );
+
+
+      try {
+
+        const transfer =
+          new DataTransfer();
+
+        transfer.items.add(
           file
         );
 
-        try {
-          const dt =
-            new DataTransfer();
+        fieldFile.files =
+          transfer.files;
 
-          dt.items.add(file);
+      } catch {
 
-          fieldFile.files =
-            dt.files;
+        showToast(
+          'Select the file again in the upload window.',
+          'error'
+        );
 
-        } catch (_) {}
       }
+
     }
   );
 
 
-  document.getElementById(
-    'docList'
-  ).addEventListener(
-    'click',
-    async e => {
-      const button =
-        e.target.closest(
-          '[data-action]'
-        );
+  document.addEventListener(
+    'keydown',
+    e => {
 
-      if (!button) return;
-
-      const id =
-        button.dataset.id;
-
-      const action =
-        button.dataset.action;
-
-
-      if (action === 'open') {
-        try {
-          button.disabled = true;
-
-          button.textContent =
-            'Opening...';
-
-          const downloadUrl =
-            await getDownloadUrl(id);
-
-          window.open(
-            downloadUrl,
-            '_blank',
-            'noopener'
-          );
-
-        } catch (err) {
-          alert(err.message);
-
-        } finally {
-          button.disabled = false;
-
-          button.textContent =
-            'Open';
-        }
-
+      if (
+        e.key !== 'Escape'
+      ) {
         return;
       }
 
 
-      if (action === 'share') {
-        try {
-          button.disabled = true;
-
-          button.textContent =
-            'Creating...';
-
-          const shareUrl =
-            await createShareLink(id);
-
-          try {
-            await navigator.clipboard.writeText(
-              shareUrl
-            );
-
-            alert(
-              'Share link copied to clipboard.\n\n' +
-              shareUrl
-            );
-
-          } catch (_) {
-            prompt(
-              'Copy this share link:',
-              shareUrl
-            );
-          }
-
-        } catch (err) {
-          alert(err.message);
-
-        } finally {
-          button.disabled = false;
-
-          button.textContent =
-            'Share';
-        }
-
-        return;
-      }
-
-
-      if (action === 'edit') {
-        openModal(id);
-
-        return;
-      }
-
-
-      if (action === 'delete') {
-        const doc =
-          docsCache.find(
-            d =>
-              String(d.id) ===
-              String(id)
-          );
-
-        if (
-          doc &&
-          confirm(
-            `Delete "${docName(doc)}"?`
+      if (
+        overlay
+          .classList
+          .contains(
+            'open'
           )
-        ) {
-          try {
-            button.disabled = true;
-
-            await deleteDocument(id);
-
-            await loadAndRender();
-
-          } catch (err) {
-            alert(err.message);
-
-            button.disabled = false;
-          }
-        }
+      ) {
+        closeModal();
       }
+
+
+      if (
+        shareOverlay
+          .classList
+          .contains(
+            'open'
+          )
+      ) {
+        closeShareModal();
+      }
+
+
+      if (
+        deleteOverlay
+          .classList
+          .contains(
+            'open'
+          )
+      ) {
+        closeDeleteModal();
+      }
+
     }
   );
 

@@ -2,110 +2,578 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DocVault — Dashboard</title>
-  <link rel="stylesheet" href="style.css">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>DocVault — Documents</title>
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
 </head>
+
 <body class="app-page">
+
   <div class="app-shell">
+
     <aside class="sidebar">
-      <div class="logo large">Doc<span>Vault</span></div>
-      <nav class="side-nav">
-        <button class="nav-item active">▣ <span>Documents</span></button>
-        <button class="nav-item" id="sideUpload">＋ <span>Upload</span></button>
+
+      <div class="sidebar-brand">
+        <div class="brand-icon">D</div>
+
+        <div class="logo large">
+          Doc<span>Vault</span>
+        </div>
+      </div>
+
+      <nav
+        class="side-nav"
+        aria-label="Main navigation"
+      >
+        <button
+          type="button"
+          class="nav-item active"
+        >
+          <span class="nav-icon">▤</span>
+          <span>Documents</span>
+        </button>
       </nav>
+
       <div class="sidebar-bottom">
+
         <div class="user-mini">
-          <div class="avatar" id="avatar">U</div>
-          <div>
-            <strong id="userEmail">User</strong>
+
+          <div
+            class="avatar"
+            id="avatar"
+          >
+            U
+          </div>
+
+          <div class="user-mini-info">
+            <strong id="userEmail">
+              User
+            </strong>
+
             <span>Signed in</span>
           </div>
+
         </div>
-        <button class="btn ghost full" id="logoutBtn">Log out</button>
+
+        <button
+          type="button"
+          class="btn sidebar-logout full"
+          id="logoutBtn"
+        >
+          Log out
+        </button>
+
       </div>
+
     </aside>
 
+
     <main class="dashboard">
+
       <header class="topbar">
+
         <div>
+          <p class="eyebrow">
+            DOCUMENT VAULT
+          </p>
+
           <h1>My Documents</h1>
-          <p class="muted">Manage everything stored in your vault.</p>
+
+          <p class="muted">
+            Securely store, manage and share your documents.
+          </p>
         </div>
-        <button class="btn primary" id="uploadBtn">＋ Upload document</button>
+
+        <button
+          type="button"
+          class="btn primary upload-main-btn"
+          id="uploadBtn"
+        >
+          <span>＋</span>
+          Upload document
+        </button>
+
       </header>
 
-      <section class="stats-grid">
+
+      <section
+        class="stats-grid"
+        aria-label="Vault overview"
+      >
+
         <article class="stat-card">
-          <span>Total documents</span>
-          <strong id="countNumber">0</strong>
+
+          <div class="stat-icon">
+            ▤
+          </div>
+
+          <div>
+            <span>Total documents</span>
+
+            <strong id="countNumber">
+              0
+            </strong>
+          </div>
+
         </article>
+
+
         <article class="stat-card">
-          <span>Storage</span>
-          <strong>AWS S3</strong>
+
+          <div class="stat-icon">
+            ☁
+          </div>
+
+          <div>
+            <span>Storage</span>
+            <strong>AWS S3</strong>
+          </div>
+
         </article>
+
+
         <article class="stat-card">
-          <span>Account</span>
-          <strong>Protected</strong>
+
+          <div class="stat-icon">
+            ✓
+          </div>
+
+          <div>
+            <span>Security</span>
+            <strong>Protected</strong>
+          </div>
+
         </article>
+
       </section>
+
 
       <section class="documents-panel">
+
         <div class="panel-toolbar">
+
           <div>
             <h2>Documents</h2>
-            <span class="muted" id="count">0 documents</span>
+
+            <span
+              class="muted document-count"
+              id="count"
+            >
+              0 documents
+            </span>
           </div>
-          <input class="search-input" type="search" id="searchInput" placeholder="Search documents...">
+
+
+          <div class="document-tools">
+
+            <div class="search-wrapper">
+
+              <span
+                class="search-icon"
+                aria-hidden="true"
+              >
+                ⌕
+              </span>
+
+              <input
+                class="search-input"
+                type="search"
+                id="searchInput"
+                placeholder="Search documents"
+                aria-label="Search documents"
+              >
+
+            </div>
+
+
+            <select
+              class="sort-select"
+              id="sortSelect"
+              aria-label="Sort documents"
+            >
+              <option value="recent">
+                Recently added
+              </option>
+
+              <option value="name">
+                Name A–Z
+              </option>
+            </select>
+
+          </div>
+
         </div>
 
-        <div class="upload-zone" id="dropZone">
-          <strong>Drop a file here</strong>
-          <span>or click to upload a new document</span>
+
+        <div
+          class="drop-zone"
+          id="dropZone"
+          tabindex="0"
+        >
+          <div class="drop-zone-icon">
+            ↑
+          </div>
+
+          <div>
+            <strong>
+              Drag and drop a document here
+            </strong>
+
+            <span>
+              or use the Upload document button above
+            </span>
+          </div>
         </div>
 
-        <div class="doc-list" id="docList"></div>
-        <div class="empty" id="emptyState" style="display:none;">
-          <span class="empty-icon">🗂️</span>
-          <strong>No documents yet</strong>
-          <span>Upload your first document to get started.</span>
+
+        <div
+          class="loading-state"
+          id="loadingState"
+        >
+          <div class="spinner"></div>
+          <span>Loading your documents...</span>
         </div>
+
+
+        <div
+          class="doc-list"
+          id="docList"
+        ></div>
+
+
+        <div
+          class="empty"
+          id="emptyState"
+          style="display:none;"
+        >
+
+          <div class="empty-icon">
+            ▤
+          </div>
+
+          <strong>
+            No documents yet
+          </strong>
+
+          <span>
+            Upload your first document to get started.
+          </span>
+
+          <button
+            type="button"
+            class="btn primary"
+            id="emptyUploadBtn"
+          >
+            Upload document
+          </button>
+
+        </div>
+
       </section>
+
     </main>
+
   </div>
 
-  <div class="modal-overlay" id="modalOverlay">
-    <div class="modal">
+
+  <!-- Upload / edit modal -->
+
+  <div
+    class="modal-overlay"
+    id="modalOverlay"
+    aria-hidden="true"
+  >
+
+    <div
+      class="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modalTitle"
+    >
+
       <div class="modal-heading">
+
         <div>
-          <h2 id="modalTitle">Upload document</h2>
-          <p class="muted">Add a file and its details to DocVault.</p>
+          <p class="eyebrow">
+            DOCUMENT
+          </p>
+
+          <h2 id="modalTitle">
+            Upload document
+          </h2>
+
+          <p
+            class="muted"
+            id="modalSubtitle"
+          >
+            Add a file and its details to your vault.
+          </p>
         </div>
-        <button class="icon-button" id="closeModalBtn" aria-label="Close">×</button>
+
+        <button
+          type="button"
+          class="icon-button"
+          id="closeModalBtn"
+          aria-label="Close dialog"
+        >
+          ×
+        </button>
+
       </div>
-      <label>Document ID
-        <input type="text" id="fieldId" placeholder="e.g. DOC-001">
-      </label>
-      <label>Name
-        <input type="text" id="fieldName" placeholder="e.g. Project report">
-      </label>
-      <label>File
-        <input type="file" id="fieldFile">
-      </label>
-      <label>Description
-        <textarea id="fieldDesc" rows="3" placeholder="Optional description"></textarea>
-      </label>
-      <div class="modal-error" id="modalError"></div>
+
+
+      <div class="form-group">
+
+        <label for="fieldId">
+          Document ID
+        </label>
+
+        <input
+          type="text"
+          id="fieldId"
+          placeholder="e.g. DOC-001"
+          autocomplete="off"
+        >
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label for="fieldName">
+          Document name
+        </label>
+
+        <input
+          type="text"
+          id="fieldName"
+          placeholder="e.g. Project report"
+          autocomplete="off"
+        >
+
+      </div>
+
+
+      <div
+        class="form-group"
+        id="fileGroup"
+      >
+
+        <label for="fieldFile">
+          File
+        </label>
+
+        <input
+          type="file"
+          id="fieldFile"
+        >
+
+        <span class="field-help">
+          Select the document you want to upload.
+        </span>
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label for="fieldDesc">
+          Description
+          <span class="optional">
+            Optional
+          </span>
+        </label>
+
+        <textarea
+          id="fieldDesc"
+          rows="4"
+          placeholder="Add a short description"
+        ></textarea>
+
+      </div>
+
+
+      <div
+        class="modal-error"
+        id="modalError"
+        role="alert"
+      ></div>
+
+
       <div class="modal-actions">
-        <button class="btn ghost" id="cancelBtn">Cancel</button>
-        <button class="btn primary" id="saveBtn">Save document</button>
+
+        <button
+          type="button"
+          class="btn secondary"
+          id="cancelBtn"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          class="btn primary"
+          id="saveBtn"
+        >
+          Save document
+        </button>
+
       </div>
+
     </div>
+
   </div>
+
+
+  <!-- Share modal -->
+
+  <div
+    class="modal-overlay"
+    id="shareOverlay"
+    aria-hidden="true"
+  >
+
+    <div
+      class="modal modal-small"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="shareTitle"
+    >
+
+      <div class="modal-heading">
+
+        <div>
+          <p class="eyebrow">
+            SHARE
+          </p>
+
+          <h2 id="shareTitle">
+            Share document
+          </h2>
+
+          <p class="muted">
+            Anyone with this link can temporarily access the document.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          class="icon-button"
+          id="closeShareBtn"
+          aria-label="Close share dialog"
+        >
+          ×
+        </button>
+
+      </div>
+
+
+      <div class="share-link-box">
+
+        <input
+          type="text"
+          id="shareLinkInput"
+          readonly
+          aria-label="Share link"
+        >
+
+        <button
+          type="button"
+          class="btn primary"
+          id="copyShareBtn"
+        >
+          Copy
+        </button>
+
+      </div>
+
+
+      <p class="share-note">
+        For security, shared links expire automatically.
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <!-- Delete confirmation -->
+
+  <div
+    class="modal-overlay"
+    id="deleteOverlay"
+    aria-hidden="true"
+  >
+
+    <div
+      class="modal modal-small"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="deleteTitle"
+    >
+
+      <div class="delete-symbol">
+        !
+      </div>
+
+      <h2 id="deleteTitle">
+        Delete document?
+      </h2>
+
+      <p
+        class="muted delete-text"
+        id="deleteMessage"
+      >
+        This action cannot be undone.
+      </p>
+
+      <div class="modal-actions">
+
+        <button
+          type="button"
+          class="btn secondary"
+          id="cancelDeleteBtn"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          class="btn danger-solid"
+          id="confirmDeleteBtn"
+        >
+          Delete document
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- Toast -->
+
+  <div
+    class="toast"
+    id="toast"
+    role="status"
+    aria-live="polite"
+  ></div>
+
 
   <script src="config.js"></script>
   <script src="auth.js"></script>
   <script src="api.js"></script>
   <script src="script.js"></script>
+
 </body>
 </html>
