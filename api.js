@@ -5,10 +5,10 @@ function apiHeaders(includeJson = true) {
     headers['Content-Type'] = 'application/json';
   }
 
-  const token = getIdToken();
+  const token = getApiToken();
 
   if (token) {
-    headers['Authorization'] = token;
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
   return headers;
