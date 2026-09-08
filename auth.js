@@ -380,6 +380,14 @@ function handleGoogleCredential(
     );
   }
 
+  if (
+    !payload.email
+  ) {
+    throw new Error(
+      'Google did not return an email address.'
+    );
+  }
+
   clearSession();
 
   localStorage.setItem(
@@ -387,14 +395,10 @@ function handleGoogleCredential(
     response.credential
   );
 
-  if (
+  localStorage.setItem(
+    TOKEN_KEYS.email,
     payload.email
-  ) {
-    localStorage.setItem(
-      TOKEN_KEYS.email,
-      payload.email
-    );
-  }
+  );
 
   window.location.href =
     'index.html';
@@ -438,6 +442,9 @@ async function initializeGoogleSignIn() {
     );
   }
 
+  google.accounts.id
+    .disableAutoSelect();
+
   google.accounts.id.initialize({
     client_id:
       GOOGLE_CLIENT_ID,
@@ -446,12 +453,21 @@ async function initializeGoogleSignIn() {
       handleGoogleCredential,
 
     auto_select:
+      false,
+
+    button_auto_select:
+      false,
+
+    use_fedcm_for_button:
       false
   });
 
   google.accounts.id.renderButton(
     googleButton,
     {
+      type:
+        'standard',
+
       theme:
         'outline',
 
@@ -462,7 +478,10 @@ async function initializeGoogleSignIn() {
         'rectangular',
 
       text:
-        'continue_with',
+        'signin_with',
+
+      logo_alignment:
+        'left',
 
       width:
         320

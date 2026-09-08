@@ -300,19 +300,27 @@
 
 
     /*
-      Existing Cognito session
+      Existing session
     */
 
     if (
-      typeof getIdToken === 'function' &&
-      typeof tokenIsValid === 'function' &&
-      tokenIsValid(
-        getIdToken()
-      )
+      typeof getApiToken === 'function' &&
+      typeof tokenIsValid === 'function'
     ) {
 
-      window.location.href =
-        'index.html';
+      const existingToken =
+        getApiToken();
+
+      if (
+        tokenIsValid(
+          existingToken
+        )
+      ) {
+
+        window.location.href =
+          'index.html';
+
+      }
 
     }
 
