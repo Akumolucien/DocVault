@@ -1,33 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
   <title>DocVault — Sign in</title>
-  <link rel="stylesheet" href="style.css">
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
 </head>
 
+
 <body class="auth-page">
+
   <main class="auth-shell">
 
     <section class="auth-brand-panel">
-      <div class="brand-mark">DV</div>
+
+      <div class="brand-mark">
+        DV
+      </div>
 
       <h1>
-        Keep your important documents in one secure place.
+        Keep your important documents
+        in one secure place.
       </h1>
 
       <p>
-        Upload, organize, open and manage files from your
-        DocVault dashboard.
+        Upload, organize, open and manage files
+        from your DocVault dashboard.
       </p>
 
       <div class="auth-points">
-        <span>☁️ S3 file storage</span>
-        <span>🔐 Cognito authentication</span>
-        <span>⚡ Serverless AWS backend</span>
+
+        <span>
+          ☁️ S3 file storage
+        </span>
+
+        <span>
+          🔐 Secure authentication
+        </span>
+
+        <span>
+          ⚡ Serverless AWS backend
+        </span>
+
       </div>
+
     </section>
+
 
     <section class="auth-card">
 
@@ -35,11 +63,20 @@
         Doc<span>Vault</span>
       </div>
 
-      <p class="muted" id="authSubtitle">
+
+      <p
+        class="muted"
+        id="authSubtitle"
+      >
         Sign in to continue to your vault.
       </p>
 
-      <div class="auth-tabs" id="authTabs">
+
+      <div
+        class="auth-tabs"
+        id="authTabs"
+      >
+
         <button
           class="auth-tab active"
           type="button"
@@ -48,6 +85,7 @@
           Log in
         </button>
 
+
         <button
           class="auth-tab"
           type="button"
@@ -55,25 +93,35 @@
         >
           Sign up
         </button>
+
       </div>
 
-      <!-- Google login -->
-      <button
-        type="button"
-        class="btn full google-btn"
-        id="googleLoginBtn"
+
+      <!-- Google -->
+
+      <div id="googleSection">
+
+        <div id="googleButton"></div>
+
+      </div>
+
+
+      <div
+        class="auth-divider"
+        id="authDivider"
       >
-        Continue with Google
-      </button>
-
-      <div class="auth-divider">
-        <span>or continue with email</span>
+        <span>
+          or continue with email
+        </span>
       </div>
 
-      <!-- Email/password login -->
+
+      <!-- Email/password -->
+
       <form id="authForm">
 
         <label>
+
           Email
 
           <input
@@ -83,9 +131,12 @@
             autocomplete="email"
             required
           >
+
         </label>
 
+
         <label>
+
           Password
 
           <input
@@ -95,7 +146,9 @@
             autocomplete="current-password"
             required
           >
+
         </label>
+
 
         <button
           type="submit"
@@ -107,15 +160,25 @@
 
       </form>
 
-      <!-- Confirmation code -->
-      <form id="confirmForm" class="hidden">
+
+      <!-- Confirmation -->
+
+      <form
+        id="confirmForm"
+        class="hidden"
+      >
 
         <p class="muted">
+
           We sent a confirmation code to
+
           <strong id="confirmEmail"></strong>.
+
         </p>
 
+
         <label>
+
           Confirmation code
 
           <input
@@ -126,7 +189,9 @@
             placeholder="Enter code"
             required
           >
+
         </label>
+
 
         <button
           type="submit"
@@ -134,6 +199,7 @@
         >
           Confirm account
         </button>
+
 
         <button
           type="button"
@@ -145,160 +211,329 @@
 
       </form>
 
+
       <div
         id="authMessage"
         class="auth-message"
       ></div>
 
+
       <p class="auth-footnote">
-        Authentication powered by Amazon Cognito.
+        Secure authentication powered by
+        Amazon Cognito and Google.
       </p>
 
     </section>
+
   </main>
 
+
+  <!-- Google Identity Services -->
+
+  <script
+    src="https://accounts.google.com/gsi/client"
+    async
+    defer
+  ></script>
+
+
+  <!-- DocVault -->
+
   <script src="config.js"></script>
+
   <script src="auth.js"></script>
 
+
   <script>
+
     let mode = 'login';
+
     let pendingEmail = '';
 
+
     const form =
-      document.getElementById('authForm');
+      document.getElementById(
+        'authForm'
+      );
+
 
     const confirmForm =
-      document.getElementById('confirmForm');
+      document.getElementById(
+        'confirmForm'
+      );
+
 
     const emailInput =
-      document.getElementById('email');
+      document.getElementById(
+        'email'
+      );
+
 
     const passwordInput =
-      document.getElementById('password');
+      document.getElementById(
+        'password'
+      );
+
 
     const submitBtn =
-      document.getElementById('submitBtn');
+      document.getElementById(
+        'submitBtn'
+      );
 
-    const googleLoginBtn =
-      document.getElementById('googleLoginBtn');
+
+    const googleSection =
+      document.getElementById(
+        'googleSection'
+      );
+
+
+    const authDivider =
+      document.getElementById(
+        'authDivider'
+      );
+
 
     const message =
-      document.getElementById('authMessage');
+      document.getElementById(
+        'authMessage'
+      );
 
-    if (tokenIsValid(getIdToken())) {
-      window.location.href = 'index.html';
+
+    /*
+      Existing Cognito session
+    */
+
+    if (
+      typeof getIdToken === 'function' &&
+      typeof tokenIsValid === 'function' &&
+      tokenIsValid(
+        getIdToken()
+      )
+    ) {
+
+      window.location.href =
+        'index.html';
+
     }
+
 
     function showMessage(
       text,
       type = 'error'
     ) {
-      message.textContent = text;
+
+      message.textContent =
+        text;
+
       message.className =
         `auth-message ${type}`;
+
     }
 
-    // Google login
-    googleLoginBtn.addEventListener(
-      'click',
-      async () => {
-        try {
-          googleLoginBtn.disabled = true;
-          googleLoginBtn.textContent =
-            'Redirecting to Google...';
 
-          await signInWithGoogle();
+    function hideMainAuthentication() {
 
-        } catch (err) {
-          showMessage(err.message);
+      form.classList.add(
+        'hidden'
+      );
 
-          googleLoginBtn.disabled = false;
-          googleLoginBtn.textContent =
-            'Continue with Google';
-        }
-      }
-    );
 
-    // Login / signup tabs
+      document
+        .getElementById(
+          'authTabs'
+        )
+        .classList.add(
+          'hidden'
+        );
+
+
+      googleSection
+        .classList.add(
+          'hidden'
+        );
+
+
+      authDivider
+        .classList.add(
+          'hidden'
+        );
+
+    }
+
+
+    function showMainAuthentication() {
+
+      form.classList.remove(
+        'hidden'
+      );
+
+
+      document
+        .getElementById(
+          'authTabs'
+        )
+        .classList.remove(
+          'hidden'
+        );
+
+
+      googleSection
+        .classList.remove(
+          'hidden'
+        );
+
+
+      authDivider
+        .classList.remove(
+          'hidden'
+        );
+
+    }
+
+
+    /*
+      Login / signup tabs
+    */
+
     document
-      .getElementById('authTabs')
+      .getElementById(
+        'authTabs'
+      )
       .addEventListener(
+
         'click',
+
         (e) => {
+
           const button =
-            e.target.closest('[data-mode]');
+            e.target.closest(
+              '[data-mode]'
+            );
 
-          if (!button) return;
 
-          mode = button.dataset.mode;
+          if (!button) {
+            return;
+          }
+
+
+          mode =
+            button.dataset.mode;
+
 
           document
-            .querySelectorAll('.auth-tab')
+            .querySelectorAll(
+              '.auth-tab'
+            )
             .forEach(
+
               tab =>
-                tab.classList.toggle(
-                  'active',
-                  tab === button
-                )
+
+                tab
+                  .classList
+                  .toggle(
+                    'active',
+                    tab === button
+                  )
+
             );
+
 
           submitBtn.textContent =
             mode === 'login'
               ? 'Log in'
               : 'Create account';
 
+
           passwordInput.autocomplete =
             mode === 'login'
               ? 'current-password'
               : 'new-password';
 
+
           document
-            .getElementById('authSubtitle')
+            .getElementById(
+              'authSubtitle'
+            )
             .textContent =
+
               mode === 'login'
+
                 ? 'Sign in to continue to your vault.'
+
                 : 'Create your DocVault account.';
 
-          showMessage('', '');
+
+          showMessage(
+            '',
+            ''
+          );
+
         }
+
       );
 
-    // Email login / signup
+
+    /*
+      Email login / signup
+    */
+
     form.addEventListener(
+
       'submit',
+
       async (e) => {
+
         e.preventDefault();
 
+
         const email =
-          emailInput.value
+          emailInput
+            .value
             .trim()
             .toLowerCase();
+
 
         const password =
           passwordInput.value;
 
-        submitBtn.disabled = true;
+
+        submitBtn.disabled =
+          true;
+
 
         submitBtn.textContent =
+
           mode === 'login'
+
             ? 'Signing in...'
+
             : 'Creating account...';
 
-        showMessage('', '');
+
+        showMessage(
+          '',
+          ''
+        );
+
 
         try {
 
-          if (mode === 'login') {
+          if (
+            mode === 'login'
+          ) {
 
             await signIn(
               email,
               password
             );
 
+
             window.location.href =
               'index.html';
 
-          } else {
+          }
+
+          else {
 
             const result =
               await signUp(
@@ -306,21 +541,53 @@
                 password
               );
 
-            if (result.UserConfirmed) {
+
+            if (
+              result.UserConfirmed
+            ) {
 
               showMessage(
                 'Account created. You can now log in.',
                 'success'
               );
 
-              mode = 'login';
+
+              mode =
+                'login';
+
 
               submitBtn.textContent =
                 'Log in';
 
-            } else {
 
-              pendingEmail = email;
+              document
+                .querySelectorAll(
+                  '.auth-tab'
+                )
+                .forEach(
+
+                  tab =>
+
+                    tab
+                      .classList
+                      .toggle(
+
+                        'active',
+
+                        tab.dataset.mode ===
+                          'login'
+
+                      )
+
+                );
+
+            }
+
+            else {
+
+              pendingEmail =
+                email;
+
 
               document
                 .getElementById(
@@ -329,45 +596,47 @@
                 .textContent =
                   email;
 
-              form.classList.add(
-                'hidden'
-              );
 
-              document
-                .getElementById(
-                  'authTabs'
-                )
-                .classList.add(
-                  'hidden'
-                );
+              hideMainAuthentication();
 
-              googleLoginBtn
-                .classList.add(
-                  'hidden'
-                );
 
               confirmForm
-                .classList.remove(
+                .classList
+                .remove(
                   'hidden'
                 );
 
+
               showMessage(
+
                 'Enter the verification code to activate your account.',
+
                 'success'
+
               );
+
             }
+
           }
 
-        } catch (err) {
+        }
+
+        catch (err) {
 
           if (
-            String(err.message)
+
+            String(
+              err.message
+            )
               .includes(
                 'UserNotConfirmedException'
               )
+
           ) {
 
-            pendingEmail = email;
+            pendingEmail =
+              email;
+
 
             document
               .getElementById(
@@ -376,72 +645,89 @@
               .textContent =
                 email;
 
-            form.classList.add(
-              'hidden'
-            );
 
-            document
-              .getElementById(
-                'authTabs'
-              )
-              .classList.add(
-                'hidden'
-              );
+            hideMainAuthentication();
 
-            googleLoginBtn
-              .classList.add(
-                'hidden'
-              );
 
             confirmForm
-              .classList.remove(
+              .classList
+              .remove(
                 'hidden'
               );
+
 
             showMessage(
               'Your account needs confirmation.',
               'error'
             );
 
-          } else {
+          }
+
+          else {
 
             showMessage(
               err.message
             );
+
           }
 
-        } finally {
+        }
+
+        finally {
 
           submitBtn.disabled =
             false;
 
+
           if (
-            !form.classList.contains(
-              'hidden'
-            )
+
+            !form
+              .classList
+              .contains(
+                'hidden'
+              )
+
           ) {
+
             submitBtn.textContent =
+
               mode === 'login'
+
                 ? 'Log in'
+
                 : 'Create account';
+
           }
+
         }
+
       }
+
     );
 
-    // Confirmation code
+
+    /*
+      Confirmation code
+    */
+
     confirmForm.addEventListener(
+
       'submit',
+
       async (e) => {
+
         e.preventDefault();
 
+
         const code =
+
           document
             .getElementById(
               'confirmationCode'
             )
             .value
             .trim();
+
 
         try {
 
@@ -450,102 +736,161 @@
             code
           );
 
+
           confirmForm
-            .classList.add(
+            .classList
+            .add(
               'hidden'
             );
 
-          form
-            .classList.remove(
-              'hidden'
-            );
 
-          document
-            .getElementById(
-              'authTabs'
-            )
-            .classList.remove(
-              'hidden'
-            );
+          showMainAuthentication();
 
-          googleLoginBtn
-            .classList.remove(
-              'hidden'
-            );
 
-          mode = 'login';
+          mode =
+            'login';
+
 
           document
             .querySelectorAll(
               '.auth-tab'
             )
             .forEach(
+
               tab =>
-                tab.classList.toggle(
-                  'active',
-                  tab.dataset.mode ===
-                    'login'
-                )
+
+                tab
+                  .classList
+                  .toggle(
+
+                    'active',
+
+                    tab.dataset.mode ===
+                      'login'
+
+                  )
+
             );
+
 
           submitBtn.textContent =
             'Log in';
 
+
+          passwordInput.autocomplete =
+            'current-password';
+
+
+          document
+            .getElementById(
+              'authSubtitle'
+            )
+            .textContent =
+
+              'Sign in to continue to your vault.';
+
+
           showMessage(
+
             'Account confirmed. Log in with your email and password.',
+
             'success'
+
           );
 
-        } catch (err) {
+        }
+
+        catch (err) {
 
           showMessage(
             err.message
           );
+
         }
+
       }
+
     );
 
-    // Back to login
+
+    /*
+      Back to login
+    */
+
     document
       .getElementById(
         'backToLogin'
       )
       .addEventListener(
+
         'click',
+
         () => {
 
           confirmForm
-            .classList.add(
+            .classList
+            .add(
               'hidden'
             );
 
-          form
-            .classList.remove(
-              'hidden'
-            );
+
+          showMainAuthentication();
+
+
+          mode =
+            'login';
+
 
           document
-            .getElementById(
-              'authTabs'
+            .querySelectorAll(
+              '.auth-tab'
             )
-            .classList.remove(
-              'hidden'
+            .forEach(
+
+              tab =>
+
+                tab
+                  .classList
+                  .toggle(
+
+                    'active',
+
+                    tab.dataset.mode ===
+                      'login'
+
+                  )
+
             );
 
-          googleLoginBtn
-            .classList.remove(
-              'hidden'
-            );
-
-          mode = 'login';
 
           submitBtn.textContent =
             'Log in';
 
-          showMessage('', '');
+
+          passwordInput.autocomplete =
+            'current-password';
+
+
+          document
+            .getElementById(
+              'authSubtitle'
+            )
+            .textContent =
+
+              'Sign in to continue to your vault.';
+
+
+          showMessage(
+            '',
+            ''
+          );
+
         }
+
       );
+
   </script>
 
 </body>
+
 </html>
