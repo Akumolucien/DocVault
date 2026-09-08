@@ -14,8 +14,7 @@ const COGNITO_DOMAIN =
   'https://docvault-secure-app-2026.auth.us-east-1.amazoncognito.com';
 
 const OAUTH_REDIRECT_URI =
-  'https://main.d1m785n1y8pf00.amplifyapp.com';
-
+  'https://main.d1m785n1y8pf00.amplifyapp.com/login.html';
 
 async function cognitoRequest(target, payload) {
   const response = await fetch(COGNITO_ENDPOINT, {
@@ -43,7 +42,6 @@ async function cognitoRequest(target, payload) {
 
   return data;
 }
-
 
 function decodeJwt(token) {
   try {
@@ -73,7 +71,6 @@ function decodeJwt(token) {
   }
 }
 
-
 function tokenIsValid(token) {
   if (!token) return false;
 
@@ -81,16 +78,11 @@ function tokenIsValid(token) {
 
   return Boolean(
     payload?.exp &&
-    payload.exp * 1000 >
-      Date.now() + 30000
+    payload.exp * 1000 > Date.now() + 30000
   );
 }
 
-
-function saveSession(
-  authenticationResult,
-  email
-) {
+function saveSession(authenticationResult, email) {
   if (authenticationResult.IdToken) {
     localStorage.setItem(
       TOKEN_KEYS.id,
@@ -120,14 +112,12 @@ function saveSession(
   }
 }
 
-
 function clearSession() {
   Object.values(TOKEN_KEYS)
     .forEach(
       key => localStorage.removeItem(key)
     );
 }
-
 
 function clearOAuthState() {
   Object.values(OAUTH_KEYS)
@@ -136,20 +126,17 @@ function clearOAuthState() {
     );
 }
 
-
 function getIdToken() {
   return localStorage.getItem(
     TOKEN_KEYS.id
   );
 }
 
-
 function getAccessToken() {
   return localStorage.getItem(
     TOKEN_KEYS.access
   );
 }
-
 
 function getCurrentUser() {
   const token = getIdToken();
@@ -170,11 +157,7 @@ function getCurrentUser() {
   };
 }
 
-
-async function signUp(
-  email,
-  password
-) {
+async function signUp(email, password) {
   return cognitoRequest(
     'SignUp',
     {
@@ -191,11 +174,7 @@ async function signUp(
   );
 }
 
-
-async function confirmSignUp(
-  email,
-  code
-) {
+async function confirmSignUp(email, code) {
   return cognitoRequest(
     'ConfirmSignUp',
     {
@@ -206,11 +185,7 @@ async function confirmSignUp(
   );
 }
 
-
-async function signIn(
-  email,
-  password
-) {
+async function signIn(email, password) {
   const data =
     await cognitoRequest(
       'InitiateAuth',
@@ -245,7 +220,6 @@ async function signIn(
   return data.AuthenticationResult;
 }
 
-
 function base64UrlEncode(buffer) {
   const bytes =
     new Uint8Array(buffer);
@@ -265,10 +239,7 @@ function base64UrlEncode(buffer) {
     .replace(/=+$/, '');
 }
 
-
-function generateRandomString(
-  length = 64
-) {
+function generateRandomString(length = 64) {
   const characters =
     'ABCDEFGHIJKLMNOPQRSTUVWXYZ' +
     'abcdefghijklmnopqrstuvwxyz' +
@@ -298,10 +269,7 @@ function generateRandomString(
   return result;
 }
 
-
-async function createCodeChallenge(
-  verifier
-) {
+async function createCodeChallenge(verifier) {
   const encoded =
     new TextEncoder()
       .encode(verifier);
@@ -316,7 +284,6 @@ async function createCodeChallenge(
     digest
   );
 }
-
 
 async function signInWithGoogle() {
   const verifier =
@@ -371,10 +338,7 @@ async function signInWithGoogle() {
     `${COGNITO_DOMAIN}/oauth2/authorize?${params.toString()}`;
 }
 
-
-async function exchangeOAuthCode(
-  code
-) {
+async function exchangeOAuthCode(code) {
   const verifier =
     sessionStorage.getItem(
       OAUTH_KEYS.verifier
@@ -459,7 +423,6 @@ async function exchangeOAuthCode(
   return authenticationResult;
 }
 
-
 async function handleOAuthCallback() {
   const params =
     new URLSearchParams(
@@ -533,7 +496,6 @@ async function handleOAuthCallback() {
   return true;
 }
 
-
 async function refreshSession() {
   const refreshToken =
     localStorage.getItem(
@@ -576,7 +538,6 @@ async function refreshSession() {
   }
 }
 
-
 async function ensureAuthenticated() {
   if (
     tokenIsValid(
@@ -600,7 +561,6 @@ async function ensureAuthenticated() {
   return false;
 }
 
-
 function logout() {
   clearSession();
   clearOAuthState();
@@ -608,7 +568,6 @@ function logout() {
   window.location.href =
     'login.html';
 }
-
 
 (async function processOAuthRedirect() {
   const params =
