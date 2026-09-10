@@ -83,7 +83,15 @@
         class="google-section"
         id="googleSection"
       >
-        <div id="googleButton"></div>
+
+        <button
+          type="button"
+          id="googleButton"
+          class="btn full"
+        >
+          Continue with Google
+        </button>
+
       </div>
 
 
@@ -209,19 +217,13 @@
 
 
       <p class="auth-footnote">
-        Secure authentication powered by Amazon Cognito and Google.
+        Secure authentication powered by Amazon Cognito.
       </p>
 
     </section>
 
   </main>
 
-
-  <script
-    src="https://accounts.google.com/gsi/client"
-    async
-    defer
-  ></script>
 
   <script src="config.js"></script>
   <script src="auth.js"></script>
@@ -233,37 +235,68 @@
     let pendingEmail = '';
 
     const form =
-      document.getElementById('authForm');
+      document.getElementById(
+        'authForm'
+      );
 
     const confirmForm =
-      document.getElementById('confirmForm');
+      document.getElementById(
+        'confirmForm'
+      );
 
     const emailInput =
-      document.getElementById('email');
+      document.getElementById(
+        'email'
+      );
 
     const passwordInput =
-      document.getElementById('password');
+      document.getElementById(
+        'password'
+      );
 
     const submitBtn =
-      document.getElementById('submitBtn');
+      document.getElementById(
+        'submitBtn'
+      );
 
     const googleSection =
-      document.getElementById('googleSection');
+      document.getElementById(
+        'googleSection'
+      );
 
     const authDivider =
-      document.getElementById('authDivider');
+      document.getElementById(
+        'authDivider'
+      );
 
     const message =
-      document.getElementById('authMessage');
+      document.getElementById(
+        'authMessage'
+      );
 
     const authTitle =
-      document.getElementById('authTitle');
+      document.getElementById(
+        'authTitle'
+      );
 
     const authSubtitle =
-      document.getElementById('authSubtitle');
+      document.getElementById(
+        'authSubtitle'
+      );
+
+
+    const queryParams =
+      new URLSearchParams(
+        window.location.search
+      );
+
+    const hasOAuthCallback =
+      queryParams.has('code') ||
+      queryParams.has('error');
 
 
     if (
+      !hasOAuthCallback &&
       typeof getApiToken === 'function' &&
       typeof tokenIsValid === 'function'
     ) {
@@ -302,15 +335,20 @@
     function updateModeUI() {
 
       document
-        .querySelectorAll('.auth-tab')
-        .forEach(tab => {
+        .querySelectorAll(
+          '.auth-tab'
+        )
+        .forEach(
+          tab => {
 
-          tab.classList.toggle(
-            'active',
-            tab.dataset.mode === mode
-          );
+            tab.classList.toggle(
+              'active',
+              tab.dataset.mode ===
+                mode
+            );
 
-        });
+          }
+        );
 
 
       if (
@@ -329,7 +367,9 @@
         passwordInput.autocomplete =
           'current-password';
 
-      } else {
+      }
+
+      else {
 
         authTitle.textContent =
           'Create your account';
@@ -355,7 +395,9 @@
       );
 
       document
-        .getElementById('authTabs')
+        .getElementById(
+          'authTabs'
+        )
         .classList.add(
           'hidden'
         );
@@ -390,7 +432,9 @@
       );
 
       document
-        .getElementById('authTabs')
+        .getElementById(
+          'authTabs'
+        )
         .classList.remove(
           'hidden'
         );
@@ -419,7 +463,9 @@
 
 
     document
-      .getElementById('authTabs')
+      .getElementById(
+        'authTabs'
+      )
       .addEventListener(
         'click',
         e => {
@@ -490,7 +536,9 @@
             window.location.href =
               'index.html';
 
-          } else {
+          }
+
+          else {
 
             const result =
               await signUp(
@@ -513,7 +561,9 @@
                 'success'
               );
 
-            } else {
+            }
+
+            else {
 
               pendingEmail =
                 email;
@@ -542,7 +592,9 @@
 
           }
 
-        } catch (err) {
+        }
+
+        catch (err) {
 
           if (
             String(
@@ -570,7 +622,9 @@
                 'hidden'
               );
 
-          } else {
+          }
+
+          else {
 
             showMessage(
               err.message
@@ -578,7 +632,9 @@
 
           }
 
-        } finally {
+        }
+
+        finally {
 
           submitBtn.disabled =
             false;
@@ -641,7 +697,9 @@
             'success'
           );
 
-        } catch (err) {
+        }
+
+        catch (err) {
 
           showMessage(
             err.message
@@ -685,4 +743,5 @@
   </script>
 
 </body>
+
 </html>

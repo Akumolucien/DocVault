@@ -5,11 +5,20 @@ const TOKEN_KEYS = {
   email: 'docvault_email'
 };
 
-const GOOGLE_TOKEN_KEY =
-  'docvault_google_id_token';
+const COGNITO_DOMAIN =
+  'https://docvault-secure-app-2026.auth.us-east-1.amazoncognito.com';
 
-const GOOGLE_CLIENT_ID =
-  '399333215851-87t05pr9q89pgtfpb3qomdpuercj4r9d.apps.googleusercontent.com';
+const OAUTH_REDIRECT_URI =
+  'https://main.d1m785n1y8pf00.amplifyapp.com/login.html';
+
+const OAUTH_LOGOUT_URI =
+  'https://main.d1m785n1y8pf00.amplifyapp.com';
+
+const PKCE_VERIFIER_KEY =
+  'docvault_pkce_verifier';
+
+const OAUTH_STATE_KEY =
+  'docvault_oauth_state';
 
 
 async function cognitoRequest(
@@ -74,9 +83,15 @@ function decodeJwt(
           '/'
         );
 
+    const padded =
+      payload +
+      '='.repeat(
+        (4 - payload.length % 4) % 4
+      );
+
     return JSON.parse(
       decodeURIComponent(
-        atob(payload)
+        atob(padded)
           .split('')
           .map(
             c =>
@@ -123,37 +138,56 @@ function saveSession(
   authenticationResult,
   email
 ) {
-  if (
-    authenticationResult.IdToken
-  ) {
+  const idToken =
+    authenticationResult.IdToken ||
+    authenticationResult.id_token;
+
+  const accessToken =
+    authenticationResult.AccessToken ||
+    authenticationResult.access_token;
+
+  const refreshToken =
+    authenticationResult.RefreshToken ||
+    authenticationResult.refresh_token;
+
+  if (idToken) {
     localStorage.setItem(
       TOKEN_KEYS.id,
-      authenticationResult.IdToken
+      idToken
     );
   }
 
-  if (
-    authenticationResult.AccessToken
-  ) {
+  if (accessToken) {
     localStorage.setItem(
       TOKEN_KEYS.access,
-      authenticationResult.AccessToken
+      accessToken
     );
   }
 
-  if (
-    authenticationResult.RefreshToken
-  ) {
+  if (refreshToken) {
     localStorage.setItem(
       TOKEN_KEYS.refresh,
-      authenticationResult.RefreshToken
+      refreshToken
     );
   }
 
-  if (email) {
+  let userEmail =
+    email;
+
+  if (
+    !userEmail &&
+    idToken
+  ) {
+    userEmail =
+      decodeJwt(
+        idToken
+      )?.email;
+  }
+
+  if (userEmail) {
     localStorage.setItem(
       TOKEN_KEYS.email,
-      email
+      userEmail
     );
   }
 }
@@ -169,8 +203,12 @@ function clearSession() {
       )
   );
 
-  localStorage.removeItem(
-    GOOGLE_TOKEN_KEY
+  sessionStorage.removeItem(
+    PKCE_VERIFIER_KEY
+  );
+
+  sessionStorage.removeItem(
+    OAUTH_STATE_KEY
   );
 }
 
@@ -189,34 +227,16 @@ function getAccessToken() {
 }
 
 
-function getGoogleToken() {
-  return localStorage.getItem(
-    GOOGLE_TOKEN_KEY
-  );
-}
-
-
 function getApiToken() {
-  const googleToken =
-    getGoogleToken();
+  const idToken =
+    getIdToken();
 
   if (
     tokenIsValid(
-      googleToken
+      idToken
     )
   ) {
-    return googleToken;
-  }
-
-  const accessToken =
-    getAccessToken();
-
-  if (
-    tokenIsValid(
-      accessToken
-    )
-  ) {
-    return accessToken;
+    return idToken;
   }
 
   return null;
@@ -224,17 +244,8 @@ function getApiToken() {
 
 
 function getCurrentUser() {
-  let token =
-    getGoogleToken();
-
-  if (
-    !tokenIsValid(
-      token
-    )
-  ) {
-    token =
-      getIdToken();
-  }
+  const token =
+    getIdToken();
 
   const payload =
     decodeJwt(
@@ -252,6 +263,7 @@ function getCurrentUser() {
     username:
       payload?.['cognito:username'] ||
       payload?.name ||
+      payload?.email ||
       payload?.sub ||
       ''
   };
@@ -354,158 +366,340 @@ async function signIn(
 }
 
 
-/*
-  Direct Google authentication
-*/
-
-function handleGoogleCredential(
-  response
+function base64UrlEncode(
+  bytes
 ) {
-  if (
-    !response.credential
-  ) {
+  let binary = '';
+
+  bytes.forEach(
+    byte => {
+      binary +=
+        String.fromCharCode(
+          byte
+        );
+    }
+  );
+
+  return btoa(binary)
+    .replace(
+      /\+/g,
+      '-'
+    )
+    .replace(
+      /\//g,
+      '_'
+    )
+    .replace(
+      /=+$/,
+      ''
+    );
+}
+
+
+function generateRandomString(
+  length = 64
+) {
+  const bytes =
+    new Uint8Array(
+      length
+    );
+
+  crypto.getRandomValues(
+    bytes
+  );
+
+  return base64UrlEncode(
+    bytes
+  );
+}
+
+
+async function createCodeChallenge(
+  verifier
+) {
+  const data =
+    new TextEncoder()
+      .encode(
+        verifier
+      );
+
+  const digest =
+    await crypto.subtle.digest(
+      'SHA-256',
+      data
+    );
+
+  return base64UrlEncode(
+    new Uint8Array(
+      digest
+    )
+  );
+}
+
+
+async function signInWithGoogle() {
+  const verifier =
+    generateRandomString(
+      64
+    );
+
+  const challenge =
+    await createCodeChallenge(
+      verifier
+    );
+
+  const state =
+    generateRandomString(
+      32
+    );
+
+  sessionStorage.setItem(
+    PKCE_VERIFIER_KEY,
+    verifier
+  );
+
+  sessionStorage.setItem(
+    OAUTH_STATE_KEY,
+    state
+  );
+
+  const params =
+    new URLSearchParams({
+      identity_provider:
+        'Google',
+
+      response_type:
+        'code',
+
+      client_id:
+        COGNITO_CLIENT_ID,
+
+      redirect_uri:
+        OAUTH_REDIRECT_URI,
+
+      scope:
+        'openid email profile',
+
+      state:
+        state,
+
+      code_challenge_method:
+        'S256',
+
+      code_challenge:
+        challenge
+    });
+
+  window.location.href =
+    `${COGNITO_DOMAIN}/oauth2/authorize?${params.toString()}`;
+}
+
+
+async function exchangeAuthorizationCode(
+  code
+) {
+  const verifier =
+    sessionStorage.getItem(
+      PKCE_VERIFIER_KEY
+    );
+
+  if (!verifier) {
     throw new Error(
-      'Google did not return a credential.'
+      'Google login session expired. Please try again.'
     );
   }
 
-  const payload =
-    decodeJwt(
-      response.credential
+  const body =
+    new URLSearchParams({
+      grant_type:
+        'authorization_code',
+
+      client_id:
+        COGNITO_CLIENT_ID,
+
+      code:
+        code,
+
+      redirect_uri:
+        OAUTH_REDIRECT_URI,
+
+      code_verifier:
+        verifier
+    });
+
+  const response =
+    await fetch(
+      `${COGNITO_DOMAIN}/oauth2/token`,
+      {
+        method:
+          'POST',
+
+        headers: {
+          'Content-Type':
+            'application/x-www-form-urlencoded'
+        },
+
+        body:
+          body.toString()
+      }
     );
 
-  if (!payload) {
-    throw new Error(
-      'Unable to read Google authentication response.'
-    );
-  }
+  const data =
+    await response
+      .json()
+      .catch(
+        () => ({})
+      );
 
-  if (
-    !payload.email
-  ) {
+  if (!response.ok) {
     throw new Error(
-      'Google did not return an email address.'
+      data.error_description ||
+      data.error ||
+      'Unable to complete Google login.'
     );
   }
 
   clearSession();
 
-  localStorage.setItem(
-    GOOGLE_TOKEN_KEY,
-    response.credential
+  saveSession(
+    data
   );
 
-  localStorage.setItem(
-    TOKEN_KEYS.email,
-    payload.email
+  return data;
+}
+
+
+async function handleOAuthCallback() {
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
+
+  const error =
+    params.get(
+      'error'
+    );
+
+  if (error) {
+    const description =
+      params.get(
+        'error_description'
+      );
+
+    history.replaceState(
+      {},
+      document.title,
+      window.location.pathname
+    );
+
+    throw new Error(
+      description ||
+      error
+    );
+  }
+
+  const code =
+    params.get(
+      'code'
+    );
+
+  if (!code) {
+    return false;
+  }
+
+  const returnedState =
+    params.get(
+      'state'
+    );
+
+  const expectedState =
+    sessionStorage.getItem(
+      OAUTH_STATE_KEY
+    );
+
+  if (
+    !returnedState ||
+    !expectedState ||
+    returnedState !==
+      expectedState
+  ) {
+    throw new Error(
+      'Invalid OAuth state. Please try signing in again.'
+    );
+  }
+
+  await exchangeAuthorizationCode(
+    code
+  );
+
+  history.replaceState(
+    {},
+    document.title,
+    window.location.pathname
   );
 
   window.location.href =
     'index.html';
+
+  return true;
 }
 
 
-async function initializeGoogleSignIn() {
-  const googleButton =
-    document.getElementById(
-      'googleButton'
+async function refreshWithOAuth(
+  refreshToken
+) {
+  const body =
+    new URLSearchParams({
+      grant_type:
+        'refresh_token',
+
+      client_id:
+        COGNITO_CLIENT_ID,
+
+      refresh_token:
+        refreshToken
+    });
+
+  const response =
+    await fetch(
+      `${COGNITO_DOMAIN}/oauth2/token`,
+      {
+        method:
+          'POST',
+
+        headers: {
+          'Content-Type':
+            'application/x-www-form-urlencoded'
+        },
+
+        body:
+          body.toString()
+      }
     );
 
   if (
-    !googleButton
-  ) {
-    return;
-  }
-
-  let attempts = 0;
-
-  while (
-    !window.google?.accounts?.id &&
-    attempts < 50
-  ) {
-    await new Promise(
-      resolve =>
-        setTimeout(
-          resolve,
-          100
-        )
-    );
-
-    attempts++;
-  }
-
-  if (
-    !window.google?.accounts?.id
-  ) {
-    throw new Error(
-      'Google Sign-In could not load.'
-    );
-  }
-
-  google.accounts.id
-    .disableAutoSelect();
-
-  google.accounts.id.initialize({
-    client_id:
-      GOOGLE_CLIENT_ID,
-
-    callback:
-      handleGoogleCredential,
-
-    auto_select:
-      false,
-
-    button_auto_select:
-      false,
-
-    use_fedcm_for_button:
-      false
-  });
-
-  google.accounts.id.renderButton(
-    googleButton,
-    {
-      type:
-        'standard',
-
-      theme:
-        'outline',
-
-      size:
-        'large',
-
-      shape:
-        'rectangular',
-
-      text:
-        'signin_with',
-
-      logo_alignment:
-        'left',
-
-      width:
-        320
-    }
-  );
-}
-
-
-/*
-  Cognito refresh
-*/
-
-async function refreshSession() {
-  const refreshToken =
-    localStorage.getItem(
-      TOKEN_KEYS.refresh
-    );
-
-  if (
-    !refreshToken
+    !response.ok
   ) {
     return false;
   }
 
+  const data =
+    await response.json();
+
+  saveSession({
+    ...data,
+
+    refresh_token:
+      refreshToken
+  });
+
+  return true;
+}
+
+
+async function refreshWithCognito(
+  refreshToken
+) {
   try {
     const data =
       await cognitoRequest(
@@ -535,32 +729,49 @@ async function refreshSession() {
   }
 
   catch {
-    clearSession();
-
     return false;
   }
 }
 
 
-/*
-  Check authentication
-*/
-
-async function ensureAuthenticated() {
-  const googleToken =
-    getGoogleToken();
+async function refreshSession() {
+  const refreshToken =
+    localStorage.getItem(
+      TOKEN_KEYS.refresh
+    );
 
   if (
-    tokenIsValid(
-      googleToken
+    !refreshToken
+  ) {
+    return false;
+  }
+
+  if (
+    await refreshWithOAuth(
+      refreshToken
     )
   ) {
     return true;
   }
 
   if (
+    await refreshWithCognito(
+      refreshToken
+    )
+  ) {
+    return true;
+  }
+
+  clearSession();
+
+  return false;
+}
+
+
+async function ensureAuthenticated() {
+  if (
     tokenIsValid(
-      getAccessToken()
+      getIdToken()
     )
   ) {
     return true;
@@ -581,54 +792,94 @@ async function ensureAuthenticated() {
 }
 
 
-/*
-  Logout
-*/
-
 function logout() {
-  if (
-    window.google?.accounts?.id
-  ) {
-    google.accounts.id
-      .disableAutoSelect();
-  }
-
   clearSession();
 
+  const params =
+    new URLSearchParams({
+      client_id:
+        COGNITO_CLIENT_ID,
+
+      logout_uri:
+        OAUTH_LOGOUT_URI
+    });
+
   window.location.href =
-    'login.html';
+    `${COGNITO_DOMAIN}/logout?${params.toString()}`;
 }
 
 
-/*
-  Load Google button
-*/
+async function initializeGoogleSignIn() {
+  const googleButton =
+    document.getElementById(
+      'googleButton'
+    );
+
+  if (!googleButton) {
+    return;
+  }
+
+  googleButton.addEventListener(
+    'click',
+    async () => {
+      try {
+        await signInWithGoogle();
+      }
+
+      catch (err) {
+        console.error(
+          err
+        );
+
+        const message =
+          document.getElementById(
+            'authMessage'
+          );
+
+        if (message) {
+          message.textContent =
+            err.message;
+
+          message.className =
+            'auth-message error';
+        }
+      }
+    }
+  );
+}
+
 
 window.addEventListener(
   'load',
-  () => {
-    initializeGoogleSignIn()
-      .catch(
-        err => {
-          console.error(
-            err
-          );
+  async () => {
+    try {
+      const handled =
+        await handleOAuthCallback();
 
-          const message =
-            document.getElementById(
-              'authMessage'
-            );
+      if (handled) {
+        return;
+      }
 
-          if (
-            message
-          ) {
-            message.textContent =
-              err.message;
+      await initializeGoogleSignIn();
+    }
 
-            message.className =
-              'auth-message error';
-          }
-        }
+    catch (err) {
+      console.error(
+        err
       );
+
+      const message =
+        document.getElementById(
+          'authMessage'
+        );
+
+      if (message) {
+        message.textContent =
+          err.message;
+
+        message.className =
+          'auth-message error';
+      }
+    }
   }
 );

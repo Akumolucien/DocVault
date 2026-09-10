@@ -2,13 +2,16 @@ function apiHeaders(includeJson = true) {
   const headers = {};
 
   if (includeJson) {
-    headers['Content-Type'] = 'application/json';
+    headers['Content-Type'] =
+      'application/json';
   }
 
-  const token = getApiToken();
+  const token =
+    getApiToken();
 
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers['Authorization'] =
+      `Bearer ${token}`;
   }
 
   return headers;
@@ -16,10 +19,14 @@ function apiHeaders(includeJson = true) {
 
 
 async function unwrap(res) {
-  if (res.status === 401 || res.status === 403) {
+  if (
+    res.status === 401 ||
+    res.status === 403
+  ) {
     clearSession();
 
-    window.location.href = 'login.html';
+    window.location.href =
+      'login.html';
 
     throw new Error(
       'Your session expired. Please sign in again.'
@@ -27,18 +34,22 @@ async function unwrap(res) {
   }
 
   if (!res.ok) {
-    const text = await res.text();
+    const text =
+      await res.text();
 
     throw new Error(
       `API error ${res.status}: ${text}`
     );
   }
 
-  if (res.status === 204) {
+  if (
+    res.status === 204
+  ) {
     return null;
   }
 
-  const text = await res.text();
+  const text =
+    await res.text();
 
   return text
     ? JSON.parse(text)
@@ -47,119 +58,192 @@ async function unwrap(res) {
 
 
 async function getDocuments() {
-  const res = await fetch(
-    `${API_URL}items`,
-    {
-      method: 'GET',
-      headers: apiHeaders(false)
-    }
-  );
+  const res =
+    await fetch(
+      `${API_URL}items`,
+      {
+        method:
+          'GET',
 
-  return unwrap(res);
+        headers:
+          apiHeaders(false)
+      }
+    );
+
+  return unwrap(
+    res
+  );
 }
 
 
-async function createDocument(doc) {
-  const res = await fetch(
-    `${API_URL}items`,
-    {
-      method: 'POST',
-      headers: apiHeaders(),
-      body: JSON.stringify(doc)
-    }
-  );
+async function createDocument(
+  doc
+) {
+  const res =
+    await fetch(
+      `${API_URL}items`,
+      {
+        method:
+          'POST',
 
-  return unwrap(res);
+        headers:
+          apiHeaders(),
+
+        body:
+          JSON.stringify(
+            doc
+          )
+      }
+    );
+
+  return unwrap(
+    res
+  );
 }
 
 
-async function updateDocument(doc) {
-  const res = await fetch(
-    `${API_URL}items/${encodeURIComponent(doc.id)}`,
-    {
-      method: 'PUT',
-      headers: apiHeaders(),
-      body: JSON.stringify(doc)
-    }
-  );
+async function updateDocument(
+  doc
+) {
+  const res =
+    await fetch(
+      `${API_URL}items/${encodeURIComponent(doc.id)}`,
+      {
+        method:
+          'PUT',
 
-  return unwrap(res);
+        headers:
+          apiHeaders(),
+
+        body:
+          JSON.stringify(
+            doc
+          )
+      }
+    );
+
+  return unwrap(
+    res
+  );
 }
 
 
-async function deleteDocument(id) {
-  const res = await fetch(
-    `${API_URL}items/${encodeURIComponent(id)}`,
-    {
-      method: 'DELETE',
-      headers: apiHeaders(false)
-    }
-  );
+async function deleteDocument(
+  id
+) {
+  const res =
+    await fetch(
+      `${API_URL}items/${encodeURIComponent(id)}`,
+      {
+        method:
+          'DELETE',
 
-  return unwrap(res);
+        headers:
+          apiHeaders(false)
+      }
+    );
+
+  return unwrap(
+    res
+  );
 }
 
 
-async function getDownloadUrl(id) {
-  const res = await fetch(
-    `${API_URL}items/${encodeURIComponent(id)}/download`,
-    {
-      method: 'GET',
-      headers: apiHeaders(false)
-    }
-  );
+async function getDownloadUrl(
+  id
+) {
+  const res =
+    await fetch(
+      `${API_URL}items/${encodeURIComponent(id)}/download`,
+      {
+        method:
+          'GET',
 
-  const data = await unwrap(res);
+        headers:
+          apiHeaders(false)
+      }
+    );
+
+  const data =
+    await unwrap(
+      res
+    );
 
   return data.downloadUrl;
 }
 
 
-async function createShareLink(id) {
-  const res = await fetch(
-    `${API_URL}items/${encodeURIComponent(id)}/share`,
-    {
-      method: 'POST',
-      headers: apiHeaders(false)
-    }
-  );
+async function createShareLink(
+  id
+) {
+  const res =
+    await fetch(
+      `${API_URL}items/${encodeURIComponent(id)}/share`,
+      {
+        method:
+          'POST',
 
-  const data = await unwrap(res);
+        headers:
+          apiHeaders(false)
+      }
+    );
+
+  const data =
+    await unwrap(
+      res
+    );
 
   return `${API_URL}${data.sharePath}`;
 }
 
 
-async function uploadFile(file) {
-  const res = await fetch(
-    `${API_URL}upload?fileName=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(
-      file.type || 'application/octet-stream'
-    )}`,
-    {
-      method: 'GET',
-      headers: apiHeaders(false)
-    }
-  );
+async function uploadFile(
+  file
+) {
+  const contentType =
+    file.type ||
+    'application/octet-stream';
+
+  const res =
+    await fetch(
+      `${API_URL}upload?fileName=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(contentType)}`,
+      {
+        method:
+          'GET',
+
+        headers:
+          apiHeaders(false)
+      }
+    );
 
   const {
     uploadUrl,
     fileUrl
-  } = await unwrap(res);
+  } =
+    await unwrap(
+      res
+    );
 
-  const uploadResponse = await fetch(
-    uploadUrl,
-    {
-      method: 'PUT',
-      headers: {
-        'Content-Type':
-          file.type ||
-          'application/octet-stream'
-      },
-      body: file
-    }
-  );
+  const uploadResponse =
+    await fetch(
+      uploadUrl,
+      {
+        method:
+          'PUT',
 
-  if (!uploadResponse.ok) {
+        headers: {
+          'Content-Type':
+            contentType
+        },
+
+        body:
+          file
+      }
+    );
+
+  if (
+    !uploadResponse.ok
+  ) {
     throw new Error(
       `S3 upload failed (${uploadResponse.status})`
     );
